@@ -154,8 +154,12 @@ function App() {
             if (speciesIdMap[selectedTab] === 1003 && pet.Species !== 'Small Animal') return false;
         }
 
-        // Filter by search query
-        if (searchQuery && !pet.PrimaryBreed.toLowerCase().includes(searchQuery.toLowerCase()))
+        // Filter by search query (Name or Breed)
+        if (
+            searchQuery &&
+            !pet.PrimaryBreed.toLowerCase().includes(searchQuery.trim().toLowerCase()) && pet.Name &&
+            !pet.Name.toString().toLowerCase().includes(searchQuery.trim().toLowerCase())
+        )
             return false;
 
         // Filter by breed
@@ -225,11 +229,11 @@ function App() {
                     <Grid item xs={12} md={4}>
                         <TextField
                             fullWidth
-                            label="Search by Breed"
+                            label="Search by Name or Breed"
                             variant="outlined"
                             value={searchQuery}
                             onChange={handleSearchChange}
-                            placeholder="e.g., Labrador"
+                            placeholder="e.g., Bella or Labrador"
                         />
                     </Grid>
 
