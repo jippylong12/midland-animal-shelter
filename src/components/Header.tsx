@@ -12,7 +12,7 @@ const Header: React.FC<HeaderProps> = ({ selectedTab, onTabChange, tabLabels }) 
         <AppBar position="static">
             <Toolbar>
                 <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                    🐾 Adoptable Pets
+                    🐾 Midland, Texas Adoptable Pets
                 </Typography>
             </Toolbar>
             <Tabs value={selectedTab} onChange={onTabChange} variant="scrollable" scrollButtons="auto">

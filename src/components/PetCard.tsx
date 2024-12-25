@@ -25,7 +25,7 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick }) => {
             <CardActionArea onClick={onClick}>
                 <CardMedia
                     component="img"
-                    height="200"
+                    height="300"
                     image={pet.Photo || '/placeholder.png'}
                     alt={pet.Name}
                     onError={(e: any) => { e.target.onerror = null; e.target.src = '/placeholder.png'; }}
