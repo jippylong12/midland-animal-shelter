@@ -1,7 +1,9 @@
+// App.tsx
+
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { XMLParser } from 'fast-xml-parser';
-import { AdoptableSearch, Root } from './types';
+import {AdoptableDetails, AdoptableDetailsXmlNode, AdoptableSearch, Root} from './types';
 
 // MUI Icons
 import PetsIcon from '@mui/icons-material/Pets';
@@ -10,7 +12,18 @@ import CatIcon from '@mui/icons-material/Pets'; // Replace with appropriate icon
 import SmallAnimalIcon from '@mui/icons-material/Pets'; // Replace with appropriate icons
 
 // MUI Components
-import {Box, SelectChangeEvent} from '@mui/material';
+import {
+    Box,
+    SelectChangeEvent,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    Button,
+    CircularProgress,
+    Typography
+} from '@mui/material';
 
 // Custom Components
 import Header from './components/Header';
@@ -49,6 +62,12 @@ function App() {
     // State for loading and error
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+
+    // State for Modal
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [modalData, setModalData] = useState<AdoptableDetails | null>(null);
+    const [modalLoading, setModalLoading] = useState<boolean>(false);
+    const [modalError, setModalError] = useState<string | null>(null);
 
     // Handler functions
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -137,6 +156,38 @@ function App() {
 
         fetchPets();
     }, [selectedTab]); // Dependency on selectedTab ensures fetch on tab change
+
+    // Function to open modal and fetch detailed data
+    const openModal = async (animalID: number) => {
+        setIsModalOpen(true);
+        setModalLoading(true);
+        setModalError(null);
+        try {
+            const response = await fetch(
+                `https://jztmocmwmf.execute-api.us-east-2.amazonaws.com/Production/COMAPI?animalID=${animalID}`
+            );
+
+
+            const data = await response.text()
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const xmlData = await parser.parse(data) as AdoptableDetailsXmlNode;
+            setModalData(xmlData.adoptableDetails);
+        } catch (err: any) {
+            console.error('Error fetching detailed pet data:', err);
+            setModalError(err.message || 'Failed to fetch detailed pet data.');
+        } finally {
+            setModalLoading(false);
+        }
+    };
+
+    // Function to close modal
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setModalData(null);
+        setModalError(null);
+    };
 
     // Filter pets based on search and filters
     const filteredPets = pets.filter((pet) => {
@@ -236,8 +287,61 @@ function App() {
                 />
 
                 {/* Pet List */}
-                <PetList pets={sortedPets} loading={loading} error={error} />
+                <PetList pets={sortedPets} loading={loading} error={error} onPetClick={openModal} />
             </Box>
+
+            {/* Modal for Pet Details */}
+            <Dialog open={isModalOpen} onClose={closeModal} maxWidth="sm" fullWidth>
+                <DialogTitle>Pet Details</DialogTitle>
+                <DialogContent>
+                    {modalLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', padding: 2 }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : modalError ? (
+                        <DialogContentText color="error">
+                            {modalError}
+                        </DialogContentText>
+                    ) : modalData ? (
+                        <Box>
+                            <img
+                                src={modalData.Photo1 || '/placeholder.png'}
+                                alt={modalData.AnimalName}
+                                style={{ width: '100%', height: 'auto', marginBottom: '16px' }}
+                                onError={(e: any) => { e.target.onerror = null; e.target.src = '/placeholder.png'; }}
+                            />
+                            <Typography gutterBottom variant="h5" component="div">
+                                {modalData.AnimalName}
+                            </Typography>
+                            <Typography variant="body1" color="text.secondary">
+                                <strong>Species:</strong> {modalData.Species}
+                            </Typography>
+                            <Typography variant="body1" color="text.secondary">
+                                <strong>Breed:</strong> {modalData.PrimaryBreed}
+                                {modalData.SecondaryBreed && ` (${modalData.SecondaryBreed})`}
+                            </Typography>
+                            <Typography variant="body1" color="text.secondary">
+                                <strong>Gender:</strong> {modalData.Sex}
+                            </Typography>
+                            <Typography variant="body1" color="text.secondary">
+                                <strong>Age:</strong> {Math.floor(modalData.Age / 12)} Year{Math.floor(modalData.Age / 12) !== 1 ? 's' : ''}
+                            </Typography>
+                            <Typography variant="body1" color="text.secondary">
+                                <strong>Location:</strong> {modalData.Location}
+                            </Typography>
+                            <Typography variant="body1" color="text.secondary">
+                                <strong>Stage:</strong> {modalData.Stage}
+                            </Typography>
+                            {/* Add more detailed fields as needed */}
+                        </Box>
+                    ) : (
+                        <DialogContentText>No data available.</DialogContentText>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={closeModal}>Close</Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

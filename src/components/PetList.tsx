@@ -1,36 +1,47 @@
+// PetList.tsx
+
 import React from 'react';
-import { Grid, Box, CircularProgress, Alert } from '@mui/material';
-import PetCard from './PetCard';
 import { AdoptableSearch } from '../types';
+import { Grid, Typography, CircularProgress, Box } from '@mui/material';
+import PetCard from './PetCard';
 
 interface PetListProps {
     pets: AdoptableSearch[];
     loading: boolean;
     error: string | null;
+    onPetClick: (animalID: number) => void;
 }
 
-const PetList: React.FC<PetListProps> = ({ pets, loading, error }) => {
+const PetList: React.FC<PetListProps> = ({ pets, loading, error, onPetClick }) => {
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-                <CircularProgress color="primary" />
+            <Box sx={{ display: 'flex', justifyContent: 'center', padding: 2 }}>
+                <CircularProgress />
             </Box>
         );
     }
 
     if (error) {
-        return <Alert severity="error">{error}</Alert>;
+        return (
+            <Typography color="error" variant="h6" align="center">
+                {error}
+            </Typography>
+        );
     }
 
     if (pets.length === 0) {
-        return <Alert severity="info">No pets found matching your criteria.</Alert>;
+        return (
+            <Typography variant="h6" align="center">
+                No pets found.
+            </Typography>
+        );
     }
 
     return (
-        <Grid container spacing={4}>
+        <Grid container spacing={2}>
             {pets.map((pet) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={pet.ID}>
-                    <PetCard pet={pet} />
+                    <PetCard pet={pet} onClick={() => onPetClick(pet.ID)} />
                 </Grid>
             ))}
         </Grid>

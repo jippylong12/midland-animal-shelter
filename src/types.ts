@@ -39,3 +39,63 @@ export interface ArrayOfXmlNode {
 export interface Root {
     "ns0:ArrayOfXmlNode": ArrayOfXmlNode
 }
+
+export interface AdoptableDetailsXmlNode {
+    adoptableDetails: AdoptableDetails;
+}
+
+export type AdoptableDetails = {
+    CompanyID: number;
+    ID: number;
+    AnimalName: string;
+    Species: string;
+    Sex: string;
+    Altered: string;
+    PrimaryBreed: string;
+    SecondaryBreed: string | null;
+    PrimaryColor: string;
+    SecondaryColor: string | null;
+    Age: number;
+    Size: string;
+    Housetrained: string;
+    Declawed: string;
+    Price: string;
+    LastIntakeDate: string;
+    Location: string;
+    Dsc: string | null;
+    Photo1: string;
+    Photo2: string | null;
+    Photo3: string | null;
+    OnHold: string;
+    SpecialNeeds: string | null;
+    NoDogs: string | null;
+    NoCats: string | null;
+    NoKids: string | null;
+    BehaviorResult: string | null;
+    MemoList: any; // Use `unknown` if you don't know the structure
+    Site: string;
+    DateOfSurrender: string;
+    TimeInFormerHome: string;
+    ReasonForSurrender: string;
+    PrevEnvironment: string | null;
+    LivedWithChildren: string;
+    LivedWithAnimals: string;
+    LivedWithAnimalTypes: string | null;
+    BodyWeight: string;
+    DateOfBirth: string;
+    ARN: string | null;
+    VideoID: string | null;
+    BehaviorTestList: any; // Use `unknown` if you don't know the structure
+    Stage: string;
+    AnimalType: string;
+    AgeGroup: string;
+    WildlifeIntakeInjury: string | null;
+    WildlifeIntakeCause: string | null;
+    BuddyID: string;
+    Featured: string;
+    Sublocation: string;
+    ChipNumber: string;
+    ColorPattern: string | null;
+    AdoptionApplicationUrl: string;
+    BannerURL: string;
+};
