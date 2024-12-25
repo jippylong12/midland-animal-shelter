@@ -1,5 +1,7 @@
+// Header.tsx
+
 import React from 'react';
-import { AppBar, Tabs, Tab, Toolbar, Typography } from '@mui/material';
+import { AppBar, Tabs, Tab, Toolbar, Typography, Link } from '@mui/material';
 
 interface HeaderProps {
     selectedTab: number;
@@ -8,12 +10,32 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ selectedTab, onTabChange, tabLabels }) => {
+
+    // Function to handle disclaimer link click
+    const handleDisclaimerClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => {
+        event.preventDefault();
+        const disclaimerElement = document.getElementById('disclaimer');
+        if (disclaimerElement) {
+            disclaimerElement.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     return (
         <AppBar position="static">
-            <Toolbar>
-                <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Typography variant="h6" component="div">
                     🐾 Midland, Texas Adoptable Pets
                 </Typography>
+                <Link
+                    href="#disclaimer"
+                    onClick={handleDisclaimerClick}
+                    color="inherit"
+                    underline="hover"
+                    variant="body2"
+                    sx={{ cursor: 'pointer' }}
+                >
+                    Disclaimer
+                </Link>
             </Toolbar>
             <Tabs value={selectedTab} onChange={onTabChange} variant="scrollable" scrollButtons="auto">
                 {tabLabels.map((tab) => (
