@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { XMLParser } from 'fast-xml-parser';
 import { AdoptableDetails, AdoptableDetailsXmlNode, AdoptableSearch, Root } from './types';
+import { useMediaQuery } from '@mui/material';
 
 // MUI Icons
 import PetsIcon from '@mui/icons-material/Pets';
@@ -22,7 +23,10 @@ import {
     DialogActions,
     Button,
     CircularProgress,
-    Typography, Link, Grid
+    Typography,
+    Link,
+    Grid,
+    Pagination, // Imported Pagination component
 } from '@mui/material';
 
 // Custom Components
@@ -69,6 +73,11 @@ function App() {
     const [modalLoading, setModalLoading] = useState<boolean>(false);
     const [modalError, setModalError] = useState<string | null>(null);
 
+    // Pagination States
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const isMobile = useMediaQuery('(max-width:600px)');
+    const itemsPerPage = isMobile ? 10 : 20; // Dynamically set items per page
+
     // Handler functions
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setSelectedTab(newValue);
@@ -111,6 +120,16 @@ function App() {
     const handleSortByChange = (event: SelectChangeEvent<string>) => {
         setSortBy(event.target.value);
     };
+
+    // Handle Page Change
+    const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
+        setCurrentPage(page);
+    };
+
+    // Effect to reset current page when filters, sorting, or tab changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, breed, gender, age, stage, sortBy, selectedTab]);
 
     // Effect to make API request based on selectedTab
     useEffect(() => {
@@ -237,6 +256,13 @@ function App() {
         return 0; // No sorting
     });
 
+    // Paginate the sorted pets
+    const totalPages = Math.ceil(sortedPets.length / itemsPerPage);
+    const paginatedPets = sortedPets.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
     // Extract unique breeds for the breed filter dropdown
     const uniqueBreedsSet = new Set<string>();
     pets.forEach((pet) => {
@@ -292,7 +318,22 @@ function App() {
                 />
 
                 {/* Pet List */}
-                <PetList pets={sortedPets} loading={loading} error={error} onPetClick={openModal} />
+                <PetList pets={paginatedPets} loading={loading} error={error} onPetClick={openModal} />
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
+                        <Pagination
+                            count={totalPages}
+                            page={currentPage}
+                            onChange={handlePageChange}
+                            color="primary"
+                            shape="rounded"
+                            siblingCount={1}
+                            boundaryCount={1}
+                        />
+                    </Box>
+                )}
             </Box>
 
             {/* Modal for Pet Details */}
@@ -334,7 +375,7 @@ function App() {
                             </Box>
 
                             {/* Basic Information */}
-                            <Typography gutterBottom variant="h5" component="div" sx={{marginTop: 2}}>
+                            <Typography gutterBottom variant="h5" component="div" sx={{ marginTop: 2 }}>
                                 {modalData.AnimalName}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
@@ -348,7 +389,7 @@ function App() {
                                 <strong>Gender:</strong> {modalData.Sex}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
-                            <strong>Age:</strong> {Math.floor(modalData.Age / 12)} Year{Math.floor(modalData.Age / 12) !== 1 ? 's' : ''}
+                                <strong>Age:</strong> {Math.floor(modalData.Age / 12)} Year{Math.floor(modalData.Age / 12) !== 1 ? 's' : ''}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
                                 <strong>Location:</strong> {modalData.Location}
@@ -408,7 +449,10 @@ function App() {
                                 )}
                                 {modalData.VideoID && (
                                     <Typography variant="body1" color="text.secondary">
-                                        <strong>Video:</strong> <Link href={`https://videos.example.com/${modalData.VideoID}`} target="_blank" rel="noopener">Watch Video</Link>
+                                        <strong>Video:</strong>{' '}
+                                        <Link href={`https://videos.example.com/${modalData.VideoID}`} target="_blank" rel="noopener">
+                                            Watch Video
+                                        </Link>
                                     </Typography>
                                 )}
                                 {modalData.Dsc && (
