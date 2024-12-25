@@ -22,7 +22,7 @@ import {
     DialogActions,
     Button,
     CircularProgress,
-    Typography
+    Typography, Link, Grid
 } from '@mui/material';
 
 // Custom Components
@@ -177,6 +177,7 @@ function App() {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const xmlData = await parser.parse(data) as AdoptableDetailsXmlNode;
+            console.log(xmlData.adoptableDetails);
             setModalData(xmlData.adoptableDetails);
         } catch (err: any) {
             console.error('Error fetching detailed pet data:', err);
@@ -276,7 +277,7 @@ function App() {
                     searchQuery={searchQuery}
                     onSearchChange={handleSearchChange}
                     breed={breed}
-                    onBreedChange={handleBreedChange} // Updated handler
+                    onBreedChange={handleBreedChange}
                     uniqueBreeds={uniqueBreeds}
                     gender={gender}
                     onGenderChange={handleGenderChange}
@@ -295,7 +296,7 @@ function App() {
             </Box>
 
             {/* Modal for Pet Details */}
-            <Dialog open={isModalOpen} onClose={closeModal} maxWidth="sm" fullWidth>
+            <Dialog open={isModalOpen} onClose={closeModal} maxWidth="md" fullWidth>
                 <DialogTitle>Pet Details</DialogTitle>
                 <DialogContent>
                     {modalLoading ? (
@@ -308,13 +309,32 @@ function App() {
                         </DialogContentText>
                     ) : modalData ? (
                         <Box>
-                            <img
-                                src={modalData.Photo1 || '/placeholder.png'}
-                                alt={modalData.AnimalName}
-                                style={{ width: '100%', height: 'auto', marginBottom: '16px' }}
-                                onError={(e: any) => { e.target.onerror = null; e.target.src = '/placeholder.png'; }}
-                            />
-                            <Typography gutterBottom variant="h5" component="div">
+                            {/* Photo Carousel */}
+                            <Box sx={{ flexGrow: 1 }}>
+                                <Grid container spacing={2}>
+                                    {[modalData.Photo1, modalData.Photo2, modalData.Photo3]
+                                        .filter(Boolean) // Filter out any null or undefined photos
+                                        .map((photo, index) => (
+                                            <Grid item xs={12} sm={6} md={4} key={index}>
+                                                <img
+                                                    key={index}
+                                                    src={photo || ''}
+                                                    alt={`Photo ${index + 1}`}
+                                                    style={{
+                                                        width: '100%',
+                                                        maxWidth: '300px',
+                                                        height: 'auto',
+                                                        objectFit: 'cover',
+                                                        borderRadius: '8px',
+                                                    }}
+                                                />
+                                            </Grid>
+                                        ))}
+                                </Grid>
+                            </Box>
+
+                            {/* Basic Information */}
+                            <Typography gutterBottom variant="h5" component="div" sx={{marginTop: 2}}>
                                 {modalData.AnimalName}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
@@ -328,7 +348,7 @@ function App() {
                                 <strong>Gender:</strong> {modalData.Sex}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
-                                <strong>Age:</strong> {Math.floor(modalData.Age / 12)} Year{Math.floor(modalData.Age / 12) !== 1 ? 's' : ''}
+                            <strong>Age:</strong> {Math.floor(modalData.Age / 12)} Year{Math.floor(modalData.Age / 12) !== 1 ? 's' : ''}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
                                 <strong>Location:</strong> {modalData.Location}
@@ -336,7 +356,82 @@ function App() {
                             <Typography variant="body1" color="text.secondary">
                                 <strong>Stage:</strong> {modalData.Stage}
                             </Typography>
-                            {/* Add more detailed fields as needed */}
+
+                            {/* Additional Information */}
+                            <Box sx={{ marginTop: 2 }}>
+                                {modalData.SpecialNeeds && (
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Special Needs:</strong> {modalData.SpecialNeeds}
+                                    </Typography>
+                                )}
+                                {modalData.BehaviorResult && (
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Behavior:</strong> {modalData.BehaviorResult}
+                                    </Typography>
+                                )}
+                                {modalData.ReasonForSurrender && (
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Reason for Surrender:</strong> {modalData.ReasonForSurrender}
+                                    </Typography>
+                                )}
+                                {modalData.DateOfSurrender && (
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Date of Surrender:</strong> {new Date(modalData.DateOfSurrender).toLocaleDateString()}
+                                    </Typography>
+                                )}
+                                {modalData.PrevEnvironment && (
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Previous Environment:</strong> {modalData.PrevEnvironment}
+                                    </Typography>
+                                )}
+                                <Typography variant="body1" color="text.secondary">
+                                    <strong>Lived with Children:</strong> {modalData.LivedWithChildren}
+                                </Typography>
+                                <Typography variant="body1" color="text.secondary">
+                                    <strong>Lived with Other Animals:</strong> {modalData.LivedWithAnimals}
+                                    {modalData.LivedWithAnimalTypes && ` (${modalData.LivedWithAnimalTypes})`}
+                                </Typography>
+                                {modalData.Altered && (
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Altered:</strong> {modalData.Altered}
+                                    </Typography>
+                                )}
+                                {modalData.Declawed && modalData.Species.toLowerCase() === 'cat' && (
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Declawed:</strong> {modalData.Declawed}
+                                    </Typography>
+                                )}
+                                {modalData.ChipNumber && (
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Chip Number:</strong> {modalData.ChipNumber}
+                                    </Typography>
+                                )}
+                                {modalData.VideoID && (
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Video:</strong> <Link href={`https://videos.example.com/${modalData.VideoID}`} target="_blank" rel="noopener">Watch Video</Link>
+                                    </Typography>
+                                )}
+                                {modalData.Dsc && (
+                                    <Typography variant="body1" color="text.secondary">
+                                        <strong>Description:</strong> {modalData.Dsc}
+                                    </Typography>
+                                )}
+                            </Box>
+
+                            {/* Adoption Link */}
+                            {modalData.AdoptionApplicationUrl && (
+                                <Box sx={{ marginTop: 2 }}>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        href={modalData.AdoptionApplicationUrl}
+                                        target="_blank"
+                                        rel="noopener"
+                                    >
+                                        Start Adoption Application
+                                    </Button>
+                                </Box>
+                            )}
                         </Box>
                     ) : (
                         <DialogContentText>No data available.</DialogContentText>
