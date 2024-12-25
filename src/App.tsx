@@ -1,36 +1,21 @@
-// src/App.tsx
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import { XMLParser } from 'fast-xml-parser';
 import { AdoptableSearch, Root } from './types';
 
-// MUI Components
-import {
-    AppBar,
-    Tabs,
-    Tab,
-    Box,
-    TextField,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    Grid,
-    Card,
-    CardMedia,
-    CardContent,
-    Typography,
-    CircularProgress,
-    Alert,
-    Toolbar,
-    SelectChangeEvent,
-    Chip,
-    OutlinedInput,
-} from '@mui/material';
+// MUI Icons
 import PetsIcon from '@mui/icons-material/Pets';
 import DogIcon from '@mui/icons-material/EmojiNature'; // Replace with appropriate icons
 import CatIcon from '@mui/icons-material/Pets'; // Replace with appropriate icons
 import SmallAnimalIcon from '@mui/icons-material/Pets'; // Replace with appropriate icons
+
+// MUI Components
+import {Box, SelectChangeEvent} from '@mui/material';
+
+// Custom Components
+import Header from './components/Header';
+import Filters from './components/Filters';
+import PetList from './components/PetList';
 
 function App() {
     // State for search query
@@ -55,6 +40,9 @@ function App() {
     const [age, setAge] = useState<string[]>([]); // Changed to array for multi-select
     const [stage, setStage] = useState(''); // New state for stage
 
+    // State for sorting
+    const [sortBy, setSortBy] = useState<string>(''); // '' means no sorting
+
     // State for pets data
     const [pets, setPets] = useState<AdoptableSearch[]>([]);
 
@@ -70,6 +58,7 @@ function App() {
         setGender('');
         setAge([]);
         setStage('');
+        setSortBy(''); // Reset sorting
     };
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +82,10 @@ function App() {
 
     const handleStageChange = (event: SelectChangeEvent<string>) => {
         setStage(event.target.value);
+    };
+
+    const handleSortByChange = (event: SelectChangeEvent<string>) => {
+        setSortBy(event.target.value);
     };
 
     // Effect to make API request based on selectedTab
@@ -157,7 +150,8 @@ function App() {
         // Filter by search query (Name or Breed)
         if (
             searchQuery &&
-            !pet.PrimaryBreed.toLowerCase().includes(searchQuery.trim().toLowerCase()) && pet.Name &&
+            !pet.PrimaryBreed.toLowerCase().includes(searchQuery.trim().toLowerCase()) &&
+            pet.Name &&
             !pet.Name.toString().toLowerCase().includes(searchQuery.trim().toLowerCase())
         )
             return false;
@@ -177,7 +171,17 @@ function App() {
         return true;
     });
 
-    // Extract unique breeds for the breed filter dropdown using forEach
+    // Apply sorting based on sortBy
+    const sortedPets = [...filteredPets].sort((a, b) => {
+        if (sortBy === 'breed') {
+            return a.PrimaryBreed.localeCompare(b.PrimaryBreed);
+        } else if (sortBy === 'age') {
+            return a.Age - b.Age;
+        }
+        return 0; // No sorting
+    });
+
+    // Extract unique breeds for the breed filter dropdown
     const uniqueBreedsSet = new Set<string>();
     pets.forEach((pet) => {
         if (pet.PrimaryBreed) {
@@ -186,7 +190,7 @@ function App() {
     });
     const uniqueBreeds = Array.from(uniqueBreedsSet).sort();
 
-    // Extract unique ages in years for the age filter dropdown using forEach
+    // Extract unique ages in years for the age filter dropdown
     const uniqueAgesSet = new Set<number>();
     pets.forEach((pet) => {
         if (pet.Age !== undefined && pet.Age !== null) {
@@ -196,7 +200,7 @@ function App() {
     });
     const uniqueAges = Array.from(uniqueAgesSet).sort((a, b) => a - b);
 
-    // Extract unique stages for the stage filter dropdown using forEach
+    // Extract unique stages for the stage filter dropdown
     const uniqueStagesSet = new Set<string>();
     pets.forEach((pet) => {
         if (pet.Stage) {
@@ -208,184 +212,31 @@ function App() {
     return (
         <Box sx={{ flexGrow: 1, backgroundColor: 'background.default', minHeight: '100vh' }}>
             {/* AppBar with Tabs */}
-            <AppBar position="static">
-                <Toolbar>
-                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                        🐾 Adoptable Pets
-                    </Typography>
-                </Toolbar>
-                <Tabs value={selectedTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
-                    {tabLabels.map((tab, index) => (
-                        <Tab key={tab.label} label={tab.label} icon={tab.icon} iconPosition="start" />
-                    ))}
-                </Tabs>
-            </AppBar>
+            <Header selectedTab={selectedTab} onTabChange={handleTabChange} tabLabels={tabLabels} />
 
             {/* Main Content */}
             <Box sx={{ padding: 3 }}>
                 {/* Search and Filters */}
-                <Grid container spacing={3} alignItems="center" sx={{ marginBottom: 3 }}>
-                    {/* Search Bar */}
-                    <Grid item xs={12} md={4}>
-                        <TextField
-                            fullWidth
-                            label="Search by Name or Breed"
-                            variant="outlined"
-                            value={searchQuery}
-                            onChange={handleSearchChange}
-                            placeholder="e.g., Bella or Labrador"
-                        />
-                    </Grid>
+                <Filters
+                    searchQuery={searchQuery}
+                    onSearchChange={handleSearchChange}
+                    breed={breed}
+                    onBreedChange={handleBreedChange}
+                    uniqueBreeds={uniqueBreeds}
+                    gender={gender}
+                    onGenderChange={handleGenderChange}
+                    uniqueAges={uniqueAges}
+                    age={age}
+                    onAgeChange={handleAgeChange}
+                    stage={stage}
+                    onStageChange={handleStageChange}
+                    uniqueStages={uniqueStages}
+                    sortBy={sortBy}
+                    onSortByChange={handleSortByChange}
+                />
 
-                    {/* Breed Filter */}
-                    <Grid item xs={12} sm={6} md={2}>
-                        <FormControl fullWidth variant="outlined">
-                            <InputLabel id="breed-label">Breed</InputLabel>
-                            <Select
-                                labelId="breed-label"
-                                value={breed}
-                                onChange={handleBreedChange}
-                                label="Breed"
-                            >
-                                <MenuItem value="">
-                                    <em>All Breeds</em>
-                                </MenuItem>
-                                {uniqueBreeds.map((breedOption) => (
-                                    <MenuItem key={breedOption} value={breedOption}>
-                                        {breedOption}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Grid>
-
-                    {/* Gender Filter */}
-                    <Grid item xs={12} sm={6} md={2}>
-                        <FormControl fullWidth variant="outlined">
-                            <InputLabel id="gender-label">Gender</InputLabel>
-                            <Select
-                                labelId="gender-label"
-                                value={gender}
-                                onChange={handleGenderChange}
-                                label="Gender"
-                            >
-                                <MenuItem value="">
-                                    <em>All Genders</em>
-                                </MenuItem>
-                                <MenuItem value="Male">Male</MenuItem>
-                                <MenuItem value="Female">Female</MenuItem>
-                            </Select>
-                        </FormControl>
-                    </Grid>
-
-                    {/* Age Filter (Multi-Select) */}
-                    <Grid item xs={12} sm={6} md={2}>
-                        <FormControl fullWidth variant="outlined">
-                            <InputLabel id="age-label">Age</InputLabel>
-                            <Select
-                                labelId="age-label"
-                                multiple
-                                value={age}
-                                onChange={handleAgeChange}
-                                input={<OutlinedInput label="Age" />}
-                                renderValue={(selected) => (
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                        {selected.map((value) => (
-                                            <Chip key={value} label={`${value} Year${value !== '1' ? 's' : ''}`} />
-                                        ))}
-                                    </Box>
-                                )}
-                            >
-                                <MenuItem value="">
-                                    <em>All Ages</em>
-                                </MenuItem>
-                                {uniqueAges.map((ageOption) => (
-                                    <MenuItem key={ageOption} value={ageOption.toString()}>
-                                        {ageOption} Year{ageOption !== 1 ? 's' : ''}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Grid>
-
-                    {/* Stage Filter */}
-                    <Grid item xs={12} sm={6} md={2}>
-                        <FormControl fullWidth variant="outlined">
-                            <InputLabel id="stage-label">Stage</InputLabel>
-                            <Select
-                                labelId="stage-label"
-                                value={stage}
-                                onChange={handleStageChange}
-                                label="Stage"
-                            >
-                                <MenuItem value="">
-                                    <em>All Stages</em>
-                                </MenuItem>
-                                {uniqueStages.map((stageOption) => (
-                                    <MenuItem key={stageOption} value={stageOption}>
-                                        {stageOption}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Grid>
-                </Grid>
-
-                {/* Display Loading, Error, or Pet List */}
-                {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-                        <CircularProgress color="primary" />
-                    </Box>
-                ) : error ? (
-                    <Alert severity="error">{error}</Alert>
-                ) : (
-                    <>
-                        {filteredPets.length > 0 ? (
-                            <Grid container spacing={4}>
-                                {filteredPets.map((pet) => (
-                                    <Grid item xs={12} sm={6} md={4} lg={3} key={pet.ID}>
-                                        <Card>
-                                            <CardMedia
-                                                component="img"
-                                                height="200"
-                                                image={pet.Photo || '/placeholder.png'}
-                                                alt={pet.Name}
-                                                onError={(e: any) => { e.target.onerror = null; e.target.src = '/placeholder.png'; }}
-                                            />
-                                            <CardContent>
-                                                <Typography gutterBottom variant="h6" component="div">
-                                                    {pet.Name}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    <strong>Species:</strong> {pet.Species}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    <strong>Breed:</strong> {pet.PrimaryBreed}
-                                                    {pet.SecondaryBreed && ` (${pet.SecondaryBreed})`}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    <strong>Gender:</strong> {pet.Sex}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    <strong>Age:</strong> {Math.floor(pet.Age / 12)} Year{Math.floor(pet.Age / 12) !== 1 ? 's' : ''}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    <strong>Location:</strong> {pet.Location}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    <strong>Stage:</strong> {pet.Stage}
-                                                </Typography>
-                                                {/* Add more fields as needed */}
-                                            </CardContent>
-                                        </Card>
-                                    </Grid>
-                                ))}
-                            </Grid>
-                        ) : (
-                            <Alert severity="info">No pets found matching your criteria.</Alert>
-                        )}
-                    </>
-                )}
+                {/* Pet List */}
+                <PetList pets={sortedPets} loading={loading} error={error} />
             </Box>
         </Box>
     );
