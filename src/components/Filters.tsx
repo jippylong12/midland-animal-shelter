@@ -1,12 +1,12 @@
 import React from 'react';
-import { Grid, TextField, FormControl, InputLabel, Select, MenuItem, OutlinedInput, Chip, Box } from '@mui/material';
+import { Grid, TextField, FormControl, InputLabel, Select, MenuItem, OutlinedInput, Chip, Box, Autocomplete } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material';
 
 interface FiltersProps {
     searchQuery: string;
     onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
     breed: string;
-    onBreedChange: (event: SelectChangeEvent<string>) => void;
+    onBreedChange: (value: string | null) => void; // Updated
     uniqueBreeds: string[];
     gender: string;
     onGenderChange: (event: SelectChangeEvent<string>) => void;
@@ -51,25 +51,26 @@ const Filters: React.FC<FiltersProps> = ({
                 />
             </Grid>
 
-            {/* Breed Filter */}
+            {/* Breed Filter as Autocomplete */}
             <Grid item xs={12} sm={6} md={2}>
                 <FormControl fullWidth variant="outlined">
-                    <InputLabel id="breed-label">Breed</InputLabel>
-                    <Select
-                        labelId="breed-label"
-                        value={breed}
-                        onChange={onBreedChange}
-                        label="Breed"
-                    >
-                        <MenuItem value="">
-                            <em>All Breeds</em>
-                        </MenuItem>
-                        {uniqueBreeds.map((breedOption) => (
-                            <MenuItem key={breedOption} value={breedOption}>
-                                {breedOption}
-                            </MenuItem>
-                        ))}
-                    </Select>
+                    <Autocomplete
+                        options={uniqueBreeds}
+                        value={breed || ''}
+                        onChange={(_, newValue) => {
+                            onBreedChange(newValue);
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Breed"
+                                placeholder="Select Breed"
+                            />
+                        )}
+                        clearOnEscape
+                        // Allow clearing the selection to show "All Breeds"
+                        isOptionEqualToValue={(option, value) => option === value}
+                    />
                 </FormControl>
             </Grid>
 

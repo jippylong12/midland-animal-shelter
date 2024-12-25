@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import { XMLParser } from 'fast-xml-parser';
-import {AdoptableDetails, AdoptableDetailsXmlNode, AdoptableSearch, Root} from './types';
+import { AdoptableDetails, AdoptableDetailsXmlNode, AdoptableSearch, Root } from './types';
 
 // MUI Icons
 import PetsIcon from '@mui/icons-material/Pets';
@@ -84,8 +84,13 @@ function App() {
         setSearchQuery(event.target.value);
     };
 
-    const handleBreedChange = (event: SelectChangeEvent<string>) => {
-        setBreed(event.target.value);
+    // **Updated HandleBreedChange**
+    /**
+     * Updated to handle the new signature from the Autocomplete component.
+     * It now accepts a string or null value instead of an event.
+     */
+    const handleBreedChange = (value: string | null) => {
+        setBreed(value || '');
     };
 
     const handleGenderChange = (event: SelectChangeEvent<string>) => {
@@ -167,8 +172,7 @@ function App() {
                 `https://jztmocmwmf.execute-api.us-east-2.amazonaws.com/Production/COMAPI?animalID=${animalID}`
             );
 
-
-            const data = await response.text()
+            const data = await response.text();
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -272,7 +276,7 @@ function App() {
                     searchQuery={searchQuery}
                     onSearchChange={handleSearchChange}
                     breed={breed}
-                    onBreedChange={handleBreedChange}
+                    onBreedChange={handleBreedChange} // Updated handler
                     uniqueBreeds={uniqueBreeds}
                     gender={gender}
                     onGenderChange={handleGenderChange}
