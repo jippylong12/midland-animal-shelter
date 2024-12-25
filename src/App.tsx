@@ -1,5 +1,4 @@
 // src/App.tsx
-
 import { useState, useEffect } from 'react';
 import './App.css';
 import { XMLParser } from 'fast-xml-parser';
@@ -57,11 +56,6 @@ function App() {
     const [error, setError] = useState<string | null>(null);
 
     // Handler functions
-    /**
-     * Handles tab changes.
-     * @param event - The synthetic event triggered by the tab change.
-     * @param newValue - The index of the newly selected tab.
-     */
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setSelectedTab(newValue);
         // Reset filters when tab changes (optional)
@@ -70,34 +64,18 @@ function App() {
         setAge('');
     };
 
-    /**
-     * Handles changes in the search input.
-     * @param event - The change event from the TextField.
-     */
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchQuery(event.target.value);
     };
 
-    /**
-     * Handles changes in the breed select.
-     * @param event - The select change event.
-     */
     const handleBreedChange = (event: SelectChangeEvent<string>) => {
         setBreed(event.target.value);
     };
 
-    /**
-     * Handles changes in the gender select.
-     * @param event - The select change event.
-     */
     const handleGenderChange = (event: SelectChangeEvent<string>) => {
         setGender(event.target.value);
     };
 
-    /**
-     * Handles changes in the age select.
-     * @param event - The select change event.
-     */
     const handleAgeChange = (event: SelectChangeEvent<string>) => {
         setAge(event.target.value);
     };
@@ -196,12 +174,12 @@ function App() {
     const uniqueAges = Array.from(uniqueAgesSet).sort((a, b) => a - b);
 
     return (
-        <Box sx={{ flexGrow: 1 }}>
+        <Box sx={{ flexGrow: 1, backgroundColor: 'background.default', minHeight: '100vh' }}>
             {/* AppBar with Tabs */}
             <AppBar position="static">
                 <Toolbar>
                     <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                        Adoptable Pets
+                        🐾 Adoptable Pets
                     </Typography>
                 </Toolbar>
                 <Tabs value={selectedTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
@@ -212,9 +190,9 @@ function App() {
             </AppBar>
 
             {/* Main Content */}
-            <Box sx={{ padding: 2 }}>
+            <Box sx={{ padding: 3 }}>
                 {/* Search and Filters */}
-                <Grid container spacing={2} alignItems="center" sx={{ marginBottom: 2 }}>
+                <Grid container spacing={3} alignItems="center" sx={{ marginBottom: 3 }}>
                     {/* Search Bar */}
                     <Grid item xs={12} md={4}>
                         <TextField
@@ -223,6 +201,7 @@ function App() {
                             variant="outlined"
                             value={searchQuery}
                             onChange={handleSearchChange}
+                            placeholder="e.g., Labrador"
                         />
                     </Grid>
 
@@ -293,14 +272,14 @@ function App() {
                 {/* Display Loading, Error, or Pet List */}
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-                        <CircularProgress />
+                        <CircularProgress color="primary" />
                     </Box>
                 ) : error ? (
                     <Alert severity="error">{error}</Alert>
                 ) : (
                     <>
                         {filteredPets.length > 0 ? (
-                            <Grid container spacing={2}>
+                            <Grid container spacing={4}>
                                 {filteredPets.map((pet) => (
                                     <Grid item xs={12} sm={6} md={4} lg={3} key={pet.ID}>
                                         <Card>
@@ -309,6 +288,7 @@ function App() {
                                                 height="200"
                                                 image={pet.Photo || '/placeholder.png'}
                                                 alt={pet.Name}
+                                                onError={(e: any) => { e.target.onerror = null; e.target.src = '/placeholder.png'; }}
                                             />
                                             <CardContent>
                                                 <Typography gutterBottom variant="h6" component="div">
