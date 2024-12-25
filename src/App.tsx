@@ -24,7 +24,13 @@ import {
     Alert,
     Toolbar,
     SelectChangeEvent,
+    Chip,
+    OutlinedInput,
 } from '@mui/material';
+import PetsIcon from '@mui/icons-material/Pets';
+import DogIcon from '@mui/icons-material/EmojiNature'; // Replace with appropriate icons
+import CatIcon from '@mui/icons-material/Pets'; // Replace with appropriate icons
+import SmallAnimalIcon from '@mui/icons-material/Pets'; // Replace with appropriate icons
 
 function App() {
     // State for search query
@@ -33,11 +39,11 @@ function App() {
 
     // State for selected tab
     const [selectedTab, setSelectedTab] = useState<number>(0);
-    const tabLabels: ('All Pets' | 'Dogs' | 'Cats' | 'Small Animals')[] = [
-        'All Pets',
-        'Dogs',
-        'Cats',
-        'Small Animals',
+    const tabLabels: { label: string; icon: JSX.Element }[] = [
+        { label: 'All Pets', icon: <PetsIcon /> },
+        { label: 'Dogs', icon: <DogIcon /> },
+        { label: 'Cats', icon: <CatIcon /> },
+        { label: 'Small Animals', icon: <SmallAnimalIcon /> },
     ];
 
     // Mapping of tab indices to species IDs
@@ -46,7 +52,8 @@ function App() {
     // States for filters
     const [breed, setBreed] = useState('');
     const [gender, setGender] = useState('');
-    const [age, setAge] = useState('');
+    const [age, setAge] = useState<string[]>([]); // Changed to array for multi-select
+    const [stage, setStage] = useState(''); // New state for stage
 
     // State for pets data
     const [pets, setPets] = useState<AdoptableSearch[]>([]);
@@ -61,7 +68,8 @@ function App() {
         // Reset filters when tab changes (optional)
         setBreed('');
         setGender('');
-        setAge('');
+        setAge([]);
+        setStage('');
     };
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,8 +84,15 @@ function App() {
         setGender(event.target.value);
     };
 
-    const handleAgeChange = (event: SelectChangeEvent<string>) => {
-        setAge(event.target.value);
+    const handleAgeChange = (event: SelectChangeEvent<string[]>) => {
+        const {
+            target: { value },
+        } = event;
+        setAge(typeof value === 'string' ? value.split(',') : value);
+    };
+
+    const handleStageChange = (event: SelectChangeEvent<string>) => {
+        setStage(event.target.value);
     };
 
     // Effect to make API request based on selectedTab
@@ -149,8 +164,11 @@ function App() {
         // Filter by gender
         if (gender && pet.Sex !== gender) return false;
 
-        // Filter by age
-        if (age && pet.Age.toString() !== age) return false;
+        // Filter by age (multi-select)
+        if (age.length > 0 && !age.includes(Math.floor(pet.Age / 12).toString())) return false;
+
+        // Filter by stage
+        if (stage && pet.Stage !== stage) return false;
 
         return true;
     });
@@ -164,14 +182,24 @@ function App() {
     });
     const uniqueBreeds = Array.from(uniqueBreedsSet).sort();
 
-    // Extract unique ages for the age filter dropdown using forEach
+    // Extract unique ages in years for the age filter dropdown using forEach
     const uniqueAgesSet = new Set<number>();
     pets.forEach((pet) => {
         if (pet.Age !== undefined && pet.Age !== null) {
-            uniqueAgesSet.add(pet.Age);
+            const ageInYears = Math.floor(pet.Age / 12);
+            uniqueAgesSet.add(ageInYears);
         }
     });
     const uniqueAges = Array.from(uniqueAgesSet).sort((a, b) => a - b);
+
+    // Extract unique stages for the stage filter dropdown using forEach
+    const uniqueStagesSet = new Set<string>();
+    pets.forEach((pet) => {
+        if (pet.Stage) {
+            uniqueStagesSet.add(pet.Stage);
+        }
+    });
+    const uniqueStages = Array.from(uniqueStagesSet).sort();
 
     return (
         <Box sx={{ flexGrow: 1, backgroundColor: 'background.default', minHeight: '100vh' }}>
@@ -183,8 +211,8 @@ function App() {
                     </Typography>
                 </Toolbar>
                 <Tabs value={selectedTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
-                    {tabLabels.map((label) => (
-                        <Tab key={label} label={label} sx={{color: '#000'}} />
+                    {tabLabels.map((tab, index) => (
+                        <Tab key={tab.label} label={tab.label} icon={tab.icon} iconPosition="start" />
                     ))}
                 </Tabs>
             </AppBar>
@@ -246,22 +274,52 @@ function App() {
                         </FormControl>
                     </Grid>
 
-                    {/* Age Filter */}
+                    {/* Age Filter (Multi-Select) */}
                     <Grid item xs={12} sm={6} md={2}>
                         <FormControl fullWidth variant="outlined">
                             <InputLabel id="age-label">Age</InputLabel>
                             <Select
                                 labelId="age-label"
+                                multiple
                                 value={age}
                                 onChange={handleAgeChange}
-                                label="Age"
+                                input={<OutlinedInput label="Age" />}
+                                renderValue={(selected) => (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {selected.map((value) => (
+                                            <Chip key={value} label={`${value} Year${value !== '1' ? 's' : ''}`} />
+                                        ))}
+                                    </Box>
+                                )}
                             >
                                 <MenuItem value="">
                                     <em>All Ages</em>
                                 </MenuItem>
                                 {uniqueAges.map((ageOption) => (
-                                    <MenuItem key={ageOption} value={ageOption}>
+                                    <MenuItem key={ageOption} value={ageOption.toString()}>
                                         {ageOption} Year{ageOption !== 1 ? 's' : ''}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+
+                    {/* Stage Filter */}
+                    <Grid item xs={12} sm={6} md={2}>
+                        <FormControl fullWidth variant="outlined">
+                            <InputLabel id="stage-label">Stage</InputLabel>
+                            <Select
+                                labelId="stage-label"
+                                value={stage}
+                                onChange={handleStageChange}
+                                label="Stage"
+                            >
+                                <MenuItem value="">
+                                    <em>All Stages</em>
+                                </MenuItem>
+                                {uniqueStages.map((stageOption) => (
+                                    <MenuItem key={stageOption} value={stageOption}>
+                                        {stageOption}
                                     </MenuItem>
                                 ))}
                             </Select>
@@ -305,7 +363,7 @@ function App() {
                                                     <strong>Gender:</strong> {pet.Sex}
                                                 </Typography>
                                                 <Typography variant="body2" color="text.secondary">
-                                                    <strong>Age:</strong> {pet.Age} Year{pet.Age !== 1 ? 's' : ''}
+                                                    <strong>Age:</strong> {Math.floor(pet.Age / 12)} Year{Math.floor(pet.Age / 12) !== 1 ? 's' : ''}
                                                 </Typography>
                                                 <Typography variant="body2" color="text.secondary">
                                                     <strong>Location:</strong> {pet.Location}
