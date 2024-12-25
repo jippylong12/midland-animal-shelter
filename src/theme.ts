@@ -2,35 +2,34 @@
 import { createTheme } from '@mui/material/styles';
 import { red, orange, green, teal } from '@mui/material/colors';
 
-// Define the custom theme
 const theme = createTheme({
     palette: {
         mode: 'light',
         primary: {
-            main: green[500], // A vibrant green for primary actions
+            main: green[500],
         },
         secondary: {
-            main: teal[500], // A calming teal for secondary actions
+            main: teal[500],
         },
         error: {
             main: red.A400,
         },
         background: {
-            default: '#f0f8ff', // A soft, inviting background color
-            paper: '#ffffff', // White for cards and surfaces
+            default: '#f0f8ff',
+            paper: '#ffffff',
         },
         text: {
-            primary: '#333333', // Dark text for readability
+            primary: '#333333',
             secondary: '#555555',
         },
     },
     typography: {
-        fontFamily: `'Quicksand', sans-serif`, // A friendly, rounded font
+        fontFamily: `'Quicksand', sans-serif`,
         h6: {
             fontWeight: 600,
         },
         button: {
-            textTransform: 'none', // Keep button text as is
+            textTransform: 'none',
         },
     },
     components: {
@@ -44,7 +43,7 @@ const theme = createTheme({
         MuiButton: {
             styleOverrides: {
                 root: {
-                    borderRadius: 20, // Rounded buttons
+                    borderRadius: 20,
                 },
                 containedPrimary: {
                     backgroundColor: green[500],
@@ -63,15 +62,40 @@ const theme = createTheme({
         MuiCard: {
             styleOverrides: {
                 root: {
-                    borderRadius: 15, // Rounded card corners
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)', // Subtle shadow
+                    borderRadius: 15,
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+                    transition: 'transform 0.2s',
+                    '&:hover': {
+                        transform: 'scale(1.02)',
+                    },
                 },
             },
         },
         MuiTabs: {
             styleOverrides: {
                 indicator: {
-                    backgroundColor: orange[500], // Highlight active tab with orange
+                    backgroundColor: orange[500],
+                },
+            },
+        },
+        MuiTab: {
+            styleOverrides: {
+                root: {
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    color: '#555555', // Default text color
+                    backgroundColor: 'transparent',
+                    borderRadius: '0px',
+                    transition: 'background-color 0.3s, color 0.3s, border-radius 0.3s',
+                    '&:hover': {
+                        backgroundColor: 'rgba(224, 242, 241, 0.5)', // Semi-transparent teal
+                    },
+                    '&.Mui-selected': { // Correct approach for selected state
+                        color: '#ff9800', // Orange text color
+                        backgroundColor: '#e0f2f1', // Light teal background
+                        borderRadius: '10px',
+                    },
                 },
             },
         },
@@ -83,6 +107,19 @@ const theme = createTheme({
                 },
             },
         },
+        MuiAlert: {
+            styleOverrides: {
+                standardError: {
+                    backgroundColor: red[50],
+                    color: red[700],
+                },
+                standardInfo: {
+                    backgroundColor: teal[50],
+                    color: teal[700],
+                },
+            },
+        },
+        // ... other component overrides
     },
 });
 

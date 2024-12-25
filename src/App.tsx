@@ -100,7 +100,7 @@ function App() {
                 let xmlNodes = jsonObj['ns0:ArrayOfXmlNode']?.['ns0:XmlNode'];
 
                 if (!xmlNodes) {
-                    throw new Error('No XmlNode found in the API response.');
+                    return;
                 }
 
                 // Ensure xmlNodes is always an array
@@ -184,7 +184,7 @@ function App() {
                 </Toolbar>
                 <Tabs value={selectedTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
                     {tabLabels.map((label) => (
-                        <Tab key={label} label={label} />
+                        <Tab key={label} label={label} sx={{color: '#000'}} />
                     ))}
                 </Tabs>
             </AppBar>
