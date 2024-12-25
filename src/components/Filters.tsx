@@ -74,7 +74,7 @@ const Filters: React.FC<FiltersProps> = ({
             </Grid>
 
             {/* Gender Filter */}
-            <Grid item xs={12} sm={6} md={2}>
+            <Grid item xs={12} sm={6} md={1}>
                 <FormControl fullWidth variant="outlined">
                     <InputLabel id="gender-label">Gender</InputLabel>
                     <Select
@@ -93,7 +93,7 @@ const Filters: React.FC<FiltersProps> = ({
             </Grid>
 
             {/* Age Filter (Multi-Select) */}
-            <Grid item xs={12} sm={6} md={2}>
+            <Grid item xs={12} sm={6} md={3}>
                 <FormControl fullWidth variant="outlined">
                     <InputLabel id="age-label">Age</InputLabel>
                     <Select
@@ -123,7 +123,7 @@ const Filters: React.FC<FiltersProps> = ({
             </Grid>
 
             {/* Stage Filter */}
-            <Grid item xs={12} sm={6} md={2}>
+            <Grid item xs={12} sm={6} md={1}>
                 <FormControl fullWidth variant="outlined">
                     <InputLabel id="stage-label">Stage</InputLabel>
                     <Select
@@ -145,7 +145,7 @@ const Filters: React.FC<FiltersProps> = ({
             </Grid>
 
             {/* Sort By Dropdown */}
-            <Grid item xs={12} sm={6} md={2}>
+            <Grid item xs={12} sm={6} md={1}>
                 <FormControl fullWidth variant="outlined">
                     <InputLabel id="sort-label">Sort By</InputLabel>
                     <Select
