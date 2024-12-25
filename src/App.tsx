@@ -23,7 +23,8 @@ import {
     Typography,
     CircularProgress,
     Alert,
-    Toolbar, SelectChangeEvent,
+    Toolbar,
+    SelectChangeEvent,
 } from '@mui/material';
 
 function App() {
@@ -39,6 +40,9 @@ function App() {
         'Cats',
         'Small Animals',
     ];
+
+    // Mapping of tab indices to species IDs
+    const speciesIdMap: number[] = [0, 1, 2, 1003];
 
     // States for filters
     const [breed, setBreed] = useState('');
@@ -98,12 +102,15 @@ function App() {
         setAge(event.target.value);
     };
 
-    // Effect to make API request
+    // Effect to make API request based on selectedTab
     useEffect(() => {
         const fetchPets = async () => {
+            setLoading(true); // Start loading
+            setError(null); // Reset previous errors
             try {
+                const speciesID = speciesIdMap[selectedTab];
                 const response = await fetch(
-                    'https://jztmocmwmf.execute-api.us-east-2.amazonaws.com/Production/COMAPI?speciesID=1'
+                    `https://jztmocmwmf.execute-api.us-east-2.amazonaws.com/Production/COMAPI?speciesID=${speciesID}`
                 );
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -138,20 +145,20 @@ function App() {
                 console.error('Error fetching pets:', err);
                 setError(err.message || 'Failed to fetch pets.');
             } finally {
-                setLoading(false);
+                setLoading(false); // End loading
             }
         };
 
         fetchPets();
-    }, []); // Empty dependency array ensures this runs once on mount
+    }, [selectedTab]); // Dependency on selectedTab ensures fetch on tab change
 
     // Filter pets based on search and filters
     const filteredPets = pets.filter((pet) => {
         // Filter by tab
-        if (tabLabels[selectedTab] !== 'All Pets') {
-            if (tabLabels[selectedTab] === 'Dogs' && pet.Species !== 'Dog') return false;
-            if (tabLabels[selectedTab] === 'Cats' && pet.Species !== 'Cat') return false;
-            if (tabLabels[selectedTab] === 'Small Animals' && pet.Species !== 'Small Animal') return false;
+        if (speciesIdMap[selectedTab] !== 0) { // If not 'All Pets'
+            if (speciesIdMap[selectedTab] === 1 && pet.Species !== 'Dog') return false;
+            if (speciesIdMap[selectedTab] === 2 && pet.Species !== 'Cat') return false;
+            if (speciesIdMap[selectedTab] === 1003 && pet.Species !== 'Small Animal') return false;
         }
 
         // Filter by search query
