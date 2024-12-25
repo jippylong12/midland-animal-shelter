@@ -10,6 +10,16 @@ interface PetCardProps {
 }
 
 const PetCard: React.FC<PetCardProps> = ({ pet, onClick }) => {
+
+    const formatAge = (age: number): string => {
+        if (age < 12) {
+            return `${age} Month${age !== 1 ? 's' : ''}`;
+        }
+        const years = Math.floor(age / 12);
+        const months = age % 12;
+        return `${years} Year${years !== 1 ? 's' : ''}${months > 0 ? ` and ${months} Month${months !== 1 ? 's' : ''}` : ''}`;
+    };
+
     return (
         <Card>
             <CardActionArea onClick={onClick}>
@@ -35,7 +45,7 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick }) => {
                         <strong>Gender:</strong> {pet.Sex}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        <strong>Age:</strong> {Math.floor(pet.Age / 12)} Year{Math.floor(pet.Age / 12) !== 1 ? 's' : ''}
+                        <strong>Age:</strong> {formatAge(pet.Age)}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                         <strong>Location:</strong> {pet.Location}
