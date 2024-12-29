@@ -3,7 +3,6 @@
 import React from 'react';
 import { Card, CardMedia, CardContent, Typography, CardActionArea } from '@mui/material';
 import { AdoptableSearch } from '../types';
-
 interface PetCardProps {
     pet: AdoptableSearch;
     onClick: () => void;
@@ -53,7 +52,6 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick }) => {
                     <Typography variant="body2" color="text.secondary">
                         <strong>Stage:</strong> {pet.Stage}
                     </Typography>
-                    {/* Add more fields as needed */}
                 </CardContent>
             </CardActionArea>
         </Card>
