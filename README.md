@@ -18,10 +18,13 @@ Welcome to the **Midland, Texas Adoptable Pets** application! This web applicati
 - **Browse Adoptable Pets:** Explore a wide range of adoptable animals including dogs, cats, and small animals.
 - **Search Functionality:** Easily search for pets by name or breed.
 - **Advanced Filters:** Refine your search using filters such as breed, age, gender, and stage.
+- **Favorites System:** Save your favorite pets to a personal list for easy access later.
+- **Interactive Image Carousel:** View multiple photos of each pet in a seamless carousel within the details modal.
 - **Responsive Design:** Enjoy a seamless experience on both desktop and mobile devices.
 - **Detailed Pet Information:** Click on a pet to view detailed information, including photos and special requirements.
 - **Pagination:** Navigate through the list of pets with easy-to-use pagination controls.
 - **User-Friendly Interface:** Intuitive layout powered by Material-UI for a smooth user experience.
+- **Performance Optimized:** Enhanced scrolling and rendering performance for a fluid browsing experience.
 
 ## Technology Stack
 
@@ -44,13 +47,6 @@ cd midland-pets
 ```
 
 
-# 🐾 Midland, Texas Adoptable Pets
-
-
-```bash
-git clone https://github.com/your-username/midland-pets.git
-cd midland-pets
-```
 
 ### 2. Install Dependencies
 
@@ -109,7 +105,8 @@ Once the application is running, you can:
 	•	Navigate Between Tabs: Use the tabs at the top to filter pets by All Pets, Dogs, Cats, or Small Animals.
 	•	Search Pets: Utilize the search bar to find pets by name or breed.
 	•	Apply Filters: Use the available filters to narrow down your search based on breed, age, gender, and stage.
-	•	View Pet Details: Click on a pet card to open a modal with detailed information and photos.
+	•	Manage Favorites: Click the heart icon on any pet card to add them to your favorites. Access your saved pets via the favorites button in the header.
+	•	View Pet Details: Click on a pet card to open a modal with detailed information and browse through photos using the carousel.
 	•	Navigate Pages: Use the pagination controls at the bottom to browse through different pages of pets.
 
 API Integration
