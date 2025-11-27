@@ -29,18 +29,20 @@ interface PetModalProps {
     modalLoading: boolean;
 }
 
+const parser = new XMLParser();
+
 const PetModal: React.FC<PetModalProps> = ({
-                                               isOpen,
-                                               animalID,
-                                               onClose,
-                                               setModalData,
-                                               setModalError,
-                                               setModalLoading,
-                                               modalData,
-                                               modalError,
-                                               modalLoading,
-                                           }) => {
-    const parser = new XMLParser();
+    isOpen,
+    animalID,
+    onClose,
+    setModalData,
+    setModalError,
+    setModalLoading,
+    modalData,
+    modalError,
+    modalLoading,
+}) => {
+
 
     useEffect(() => {
         const fetchPetDetails = async () => {
@@ -71,7 +73,7 @@ const PetModal: React.FC<PetModalProps> = ({
         if (isOpen && animalID !== null) {
             fetchPetDetails();
         }
-    }, [isOpen, animalID, parser, setModalData, setModalError, setModalLoading]);
+    }, [isOpen, animalID, setModalData, setModalError, setModalLoading]);
 
     const formatAge = (age: number): string => {
         if (age < 12) {
