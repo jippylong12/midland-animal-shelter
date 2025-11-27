@@ -3,6 +3,7 @@
 import React from 'react';
 import { Card, CardMedia, CardContent, Typography, CardActionArea, Chip, Box } from '@mui/material';
 import { AdoptableSearch } from '../types';
+import { getStageColor } from '../theme';
 interface PetCardProps {
     pet: AdoptableSearch;
     onClick: () => void;
@@ -54,7 +55,18 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick }) => {
 
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
                         <Chip label={formatAge(pet.Age)} size="small" />
-                        <Chip label={pet.Location} size="small" variant="outlined" />
+                        <Chip
+                            label={pet.Location}
+                            size="small"
+                            variant="outlined"
+                        />
+                        {pet.Stage && (
+                            <Chip
+                                label={pet.Stage}
+                                size="small"
+                                sx={getStageColor(pet.Stage)}
+                            />
+                        )}
                     </Box>
                 </CardContent>
             </CardActionArea>

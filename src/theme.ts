@@ -126,3 +126,13 @@ const theme = createTheme({
 });
 
 export default theme;
+
+export const getStageColor = (stage: string) => {
+    const lowerStage = stage.toLowerCase();
+    if (lowerStage.includes('available')) return { bgcolor: '#4caf50', color: 'white' }; // Green
+    if (lowerStage.includes('pending') || lowerStage.includes('hold')) return { bgcolor: '#ff9800', color: 'white' }; // Orange
+    if (lowerStage.includes('foster')) return { bgcolor: '#9c27b0', color: 'white' }; // Purple
+    if (lowerStage.includes('adopted')) return { bgcolor: '#2196f3', color: 'white' }; // Blue
+    if (lowerStage.includes('deceased')) return { bgcolor: '#9e9e9e', color: 'white' }; // Grey
+    return { bgcolor: '#e0e0e0', color: 'rgba(0, 0, 0, 0.87)' }; // Default Grey
+};

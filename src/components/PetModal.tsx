@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { AdoptableDetails, AdoptableDetailsXmlNode } from '../types';
 import { XMLParser } from 'fast-xml-parser';
+import { getStageColor } from '../theme';
 
 interface PetModalProps {
     isOpen: boolean;
@@ -195,7 +196,11 @@ const PetModal: React.FC<PetModalProps> = ({
                                     />
                                     <Chip label={formatAge(modalData.Age)} size="small" />
                                     <Chip label={modalData.Location} variant="outlined" size="small" />
-                                    <Chip label={modalData.Stage} color="success" variant="outlined" size="small" />
+                                    <Chip
+                                        label={modalData.Stage}
+                                        sx={getStageColor(modalData.Stage)}
+                                        size="small"
+                                    />
                                 </Box>
                             </Box>
 
