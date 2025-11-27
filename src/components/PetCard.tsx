@@ -38,8 +38,12 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick }) => {
                         <Chip
                             label={pet.Sex}
                             size="small"
-                            color={pet.Sex === 'Male' ? 'info' : 'secondary'}
-                            variant="outlined"
+                            sx={{
+                                bgcolor: pet.Sex === 'Male' ? '#2196f3' : pet.Sex === 'Female' ? '#f48fb1' : undefined,
+                                color: (pet.Sex === 'Male' || pet.Sex === 'Female') ? 'white' : 'text.primary',
+                                borderColor: 'transparent'
+                            }}
+                            variant="filled"
                         />
                     </Box>
 

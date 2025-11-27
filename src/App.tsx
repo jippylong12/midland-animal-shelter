@@ -48,9 +48,9 @@ function App() {
     const speciesIdMap: number[] = [0, 1, 2, 1003];
 
     // States for filters
-    const [breed, setBreed] = useState('');
+    const [breed, setBreed] = useState<string[]>([]); // Changed to array for multi-select
     const [gender, setGender] = useState('');
-    const [age, setAge] = useState<string[]>([]); // Changed to array for multi-select
+    const [age, setAge] = useState<{ min: string; max: string }>({ min: '', max: '' }); // Changed to object for min/max
     const [stage, setStage] = useState(''); // New state for stage
 
     // State for sorting
@@ -79,9 +79,9 @@ function App() {
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         setSelectedTab(newValue);
         // Reset filters when tab changes (optional)
-        setBreed('');
+        setBreed([]);
         setGender('');
-        setAge([]);
+        setAge({ min: '', max: '' });
         setStage('');
         setSortBy(''); // Reset sorting
     };
@@ -90,8 +90,8 @@ function App() {
         setSearchQuery(event.target.value);
     };
 
-    const handleBreedChange = (value: string | null) => {
-        setBreed(value || '');
+    const handleBreedChange = (_: any, value: string[]) => {
+        setBreed(value);
     };
 
     const handleGenderChange = (event: SelectChangeEvent<string>) => {
@@ -99,9 +99,8 @@ function App() {
     };
 
 
-    const handleAgeChange = (event: SelectChangeEvent<string | string[]>) => {
-        const value = event.target.value;
-        setAge(Array.isArray(value) ? value : [value]);
+    const handleAgeChange = (type: 'min' | 'max', value: string) => {
+        setAge((prev) => ({ ...prev, [type]: value }));
     };
 
     const handleStageChange = (event: SelectChangeEvent<string>) => {
@@ -204,14 +203,15 @@ function App() {
         )
             return false;
 
-        // Filter by breed
-        if (breed && !pet.PrimaryBreed.toLowerCase().includes(breed.toLowerCase())) return false;
+        // Filter by breed (multi-select)
+        if (breed.length > 0 && !breed.includes(pet.PrimaryBreed)) return false;
 
         // Filter by gender
         if (gender && pet.Sex !== gender) return false;
 
-        // Filter by age (multi-select)
-        if (age.length > 0 && !age.includes(Math.floor(pet.Age / 12).toString())) return false;
+        // Filter by age (min/max)
+        if (age.min && pet.Age < parseInt(age.min) * 12) return false;
+        if (age.max && pet.Age > parseInt(age.max) * 12) return false;
 
         // Filter by stage
         if (stage && pet.Stage !== stage) return false;
@@ -245,15 +245,6 @@ function App() {
     });
     const uniqueBreeds = Array.from(uniqueBreedsSet).sort();
 
-    // Extract unique ages in years for the age filter dropdown
-    const uniqueAgesSet = new Set<number>();
-    pets.forEach((pet) => {
-        if (pet.Age !== undefined && pet.Age !== null) {
-            const ageInYears = Math.floor(pet.Age / 12);
-            uniqueAgesSet.add(ageInYears);
-        }
-    });
-    const uniqueAges = Array.from(uniqueAgesSet).sort((a, b) => a - b);
 
     // Extract unique stages for the stage filter dropdown
     const uniqueStagesSet = new Set<string>();
@@ -280,7 +271,6 @@ function App() {
                     uniqueBreeds={uniqueBreeds}
                     gender={gender}
                     onGenderChange={handleGenderChange}
-                    uniqueAges={uniqueAges}
                     age={age}
                     onAgeChange={handleAgeChange}
                     stage={stage}

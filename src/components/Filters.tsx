@@ -1,18 +1,17 @@
 import React from 'react';
-import { Grid, TextField, FormControl, InputLabel, Select, MenuItem, OutlinedInput, Chip, Box, Autocomplete } from '@mui/material';
+import { Grid, TextField, FormControl, Select, MenuItem, Box, Autocomplete, InputLabel } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material';
 
 interface FiltersProps {
     searchQuery: string;
     onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    breed: string;
-    onBreedChange: (value: string | null) => void; // Updated
+    breed: string[];
+    onBreedChange: (event: any, value: string[]) => void;
     uniqueBreeds: string[];
     gender: string;
     onGenderChange: (event: SelectChangeEvent<string>) => void;
-    uniqueAges: number[];
-    age: string[];
-    onAgeChange: (event: SelectChangeEvent<string[]>) => void;
+    age: { min: string; max: string };
+    onAgeChange: (type: 'min' | 'max', value: string) => void;
     stage: string;
     onStageChange: (event: SelectChangeEvent<string>) => void;
     uniqueStages: string[];
@@ -21,22 +20,21 @@ interface FiltersProps {
 }
 
 const Filters: React.FC<FiltersProps> = ({
-                                             searchQuery,
-                                             onSearchChange,
-                                             breed,
-                                             onBreedChange,
-                                             uniqueBreeds,
-                                             gender,
-                                             onGenderChange,
-                                             uniqueAges,
-                                             age,
-                                             onAgeChange,
-                                             stage,
-                                             onStageChange,
-                                             uniqueStages,
-                                             sortBy,
-                                             onSortByChange,
-                                         }) => {
+    searchQuery,
+    onSearchChange,
+    breed,
+    onBreedChange,
+    uniqueBreeds,
+    gender,
+    onGenderChange,
+    age,
+    onAgeChange,
+    stage,
+    onStageChange,
+    uniqueStages,
+    sortBy,
+    onSortByChange,
+}) => {
     return (
         <Grid container spacing={3} alignItems="center" sx={{ marginBottom: 3 }}>
             {/* Search Bar */}
@@ -55,53 +53,43 @@ const Filters: React.FC<FiltersProps> = ({
             <Grid item xs={12} sm={6} md={2}>
                 <FormControl fullWidth variant="outlined">
                     <Autocomplete
+                        multiple
                         options={uniqueBreeds}
-                        value={breed || ''}
-                        onChange={(_, newValue) => {
-                            onBreedChange(newValue);
-                        }}
+                        value={breed}
+                        onChange={onBreedChange}
                         renderInput={(params) => (
                             <TextField
                                 {...params}
                                 label="Breed"
-                                placeholder="Select Breed"
+                                placeholder="Select Breeds"
                             />
                         )}
-                        clearOnEscape
                         // Allow clearing the selection to show "All Breeds"
                         isOptionEqualToValue={(option, value) => option === value}
                     />
                 </FormControl>
             </Grid>
 
-            {/* Age Filter (Multi-Select) */}
+            {/* Age Filter (Min/Max) */}
             <Grid item xs={12} sm={6} md={3}>
-                <FormControl fullWidth variant="outlined">
-                    <InputLabel id="age-label">Age</InputLabel>
-                    <Select
-                        labelId="age-label"
-                        multiple
-                        value={age}
-                        onChange={onAgeChange}
-                        input={<OutlinedInput label="Age" />}
-                        renderValue={(selected) => (
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                {selected.map((value) => (
-                                    <Chip key={value} label={`${value} Year${value !== '1' ? 's' : ''}`} />
-                                ))}
-                            </Box>
-                        )}
-                    >
-                        <MenuItem value="">
-                            <em>All Ages</em>
-                        </MenuItem>
-                        {uniqueAges.map((ageOption) => (
-                            <MenuItem key={ageOption} value={ageOption.toString()}>
-                                {ageOption} Year{ageOption !== 1 ? 's' : ''}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                        label="Min Age"
+                        type="number"
+                        value={age.min}
+                        onChange={(e) => onAgeChange('min', e.target.value)}
+                        fullWidth
+                        inputProps={{ min: 0 }}
+                    />
+                    <TextField
+                        label="Max Age"
+                        type="number"
+                        value={age.max}
+                        onChange={(e) => onAgeChange('max', e.target.value)}
+                        fullWidth
+                        inputProps={{ min: 0 }}
+                    />
+                </Box>
             </Grid>
 
             {/* Gender Filter */}

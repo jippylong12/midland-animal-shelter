@@ -25,6 +25,7 @@ const theme = createTheme({
     },
     typography: {
         fontFamily: `'Quicksand', sans-serif`,
+        fontSize: 16,
         h6: {
             fontWeight: 600,
         },

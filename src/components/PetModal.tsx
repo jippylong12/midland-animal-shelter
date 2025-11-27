@@ -185,7 +185,14 @@ const PetModal: React.FC<PetModalProps> = ({
                                     {modalData.PrimaryBreed} {modalData.SecondaryBreed && `• ${modalData.SecondaryBreed}`}
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                                    <Chip label={modalData.Sex} color={modalData.Sex === 'Male' ? 'info' : 'secondary'} size="small" />
+                                    <Chip
+                                        label={modalData.Sex}
+                                        sx={{
+                                            bgcolor: modalData.Sex === 'Male' ? '#2196f3' : modalData.Sex === 'Female' ? '#f48fb1' : undefined,
+                                            color: (modalData.Sex === 'Male' || modalData.Sex === 'Female') ? 'white' : 'text.primary'
+                                        }}
+                                        size="small"
+                                    />
                                     <Chip label={formatAge(modalData.Age)} size="small" />
                                     <Chip label={modalData.Location} variant="outlined" size="small" />
                                     <Chip label={modalData.Stage} color="success" variant="outlined" size="small" />
