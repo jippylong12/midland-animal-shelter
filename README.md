@@ -52,21 +52,56 @@ git clone https://github.com/your-username/midland-pets.git
 cd midland-pets
 ```
 
-2. Install Dependencies
+### 2. Install Dependencies
 
+```bash
 npm install
 # or
 yarn install
+```
 
-3. Start the Development Server
+### 3. Start the Development Server
 
-npm start
+```bash
+npm run dev
 # or
-yarn start
+yarn dev
+```
 
-4. Open the Application
+### 4. Open the Application
 
-Open your browser and navigate to http://localhost:3000 to view the application.
+Open your browser and navigate to the URL shown in the terminal (usually http://localhost:5173) to view the application.
+
+## Deployment
+
+To deploy the application, you need to build it first. We have provided a convenience script for this:
+
+```bash
+./deploy.sh
+```
+
+This script will run `npm run build` to create a production-ready build in the `dist` folder.
+
+### Manual Build
+
+You can also build manually:
+
+```bash
+npm run build
+```
+
+### Preview Production Build
+
+To test the production build locally before deploying:
+
+```bash
+npm run preview
+```
+
+### Deploying to Subdirectory
+
+The application is configured to be deployed to the `/midland-tx-available-pets/` subdirectory. If you are deploying to a different path, please update the `base` property in `vite.config.ts`.
+
 
 Usage
 
