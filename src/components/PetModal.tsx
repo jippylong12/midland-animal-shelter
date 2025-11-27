@@ -55,7 +55,13 @@ const PetModal: React.FC<PetModalProps> = ({
     modalLoading,
 }) => {
 
+    const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
 
+    useEffect(() => {
+        if (modalData?.Photo1) {
+            setSelectedImage(modalData.Photo1);
+        }
+    }, [modalData]);
     useEffect(() => {
         const fetchPetDetails = async () => {
             if (animalID === null) return;
@@ -116,23 +122,56 @@ const PetModal: React.FC<PetModalProps> = ({
                         {/* Left Column: Images */}
                         <Grid item xs={12} md={5}>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                {/* Main Image */}
+                                <Box
+                                    component="img"
+                                    src={selectedImage || modalData.Photo1 || ''}
+                                    alt={modalData.AnimalName}
+                                    sx={{
+                                        width: '100%',
+                                        borderRadius: 2,
+                                        boxShadow: 2,
+                                        objectFit: 'cover',
+                                        maxHeight: 400,
+                                        cursor: 'pointer',
+                                    }}
+                                    onClick={() => {
+                                        // Optional: Open lightbox or larger view
+                                    }}
+                                />
+
+                                {/* Thumbnails */}
                                 {[modalData.Photo1, modalData.Photo2, modalData.Photo3]
                                     .filter(Boolean)
-                                    .map((photo, index) => (
-                                        <Box
-                                            key={index}
-                                            component="img"
-                                            src={photo || ''}
-                                            alt={`Photo ${index + 1}`}
-                                            sx={{
-                                                width: '100%',
-                                                borderRadius: 2,
-                                                boxShadow: 2,
-                                                objectFit: 'cover',
-                                                maxHeight: 400,
-                                            }}
-                                        />
-                                    ))}
+                                    .length > 1 && (
+                                        <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 1 }}>
+                                            {[modalData.Photo1, modalData.Photo2, modalData.Photo3]
+                                                .filter((photo): photo is string => !!photo)
+                                                .map((photo, index) => (
+                                                    <Box
+                                                        key={index}
+                                                        component="img"
+                                                        src={photo}
+                                                        alt={`Thumbnail ${index + 1}`}
+                                                        onClick={() => setSelectedImage(photo)}
+                                                        sx={{
+                                                            width: 80,
+                                                            height: 80,
+                                                            borderRadius: 2,
+                                                            objectFit: 'cover',
+                                                            cursor: 'pointer',
+                                                            border: selectedImage === photo ? '2px solid' : '2px solid transparent',
+                                                            borderColor: selectedImage === photo ? 'primary.main' : 'transparent',
+                                                            opacity: selectedImage === photo ? 1 : 0.7,
+                                                            transition: 'all 0.2s',
+                                                            '&:hover': {
+                                                                opacity: 1,
+                                                            },
+                                                        }}
+                                                    />
+                                                ))}
+                                        </Box>
+                                    )}
                             </Box>
                         </Grid>
 
