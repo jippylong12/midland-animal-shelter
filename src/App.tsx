@@ -15,6 +15,7 @@ import PetsIcon from '@mui/icons-material/Pets';
 import DogIcon from '@mui/icons-material/EmojiNature'; // Replace with appropriate icons
 import CatIcon from '@mui/icons-material/Pets'; // Replace with appropriate icons
 import SmallAnimalIcon from '@mui/icons-material/Pets'; // Replace with appropriate icons
+import StarIcon from '@mui/icons-material/Star';
 
 // MUI Components
 import {
@@ -28,6 +29,8 @@ import PetList from './components/PetList';
 import PetModal from './components/PetModal';
 import Footer from './components/Footer';
 import PaginationControls from './components/PaginationControls';
+import DisclaimerDialog from './components/DisclaimerDialog';
+import { useFavorites } from './hooks/useFavorites';
 
 const parser = new XMLParser();
 
@@ -42,10 +45,11 @@ function App() {
         { label: 'Dogs', icon: <DogIcon /> },
         { label: 'Cats', icon: <CatIcon /> },
         { label: 'Small Animals', icon: <SmallAnimalIcon /> },
+        { label: 'Favorites', icon: <StarIcon /> },
     ];
 
     // Mapping of tab indices to species IDs
-    const speciesIdMap: number[] = [0, 1, 2, 1003];
+    const speciesIdMap: number[] = [0, 1, 2, 1003, -1];
 
     // States for filters
     const [breed, setBreed] = useState<string[]>([]); // Changed to array for multi-select
@@ -74,6 +78,9 @@ function App() {
     const [currentPage, setCurrentPage] = useState<number>(1);
     const isMobile = useMediaQuery('(max-width:600px)');
     const itemsPerPage = isMobile ? 10 : 20; // Dynamically set items per page
+
+    // Favorites Hook
+    const { favorites, toggleFavorite, isFavorite, isDisclaimerOpen, acceptDisclaimer, closeDisclaimer, checkAvailability } = useFavorites();
 
     // Handler functions
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -123,9 +130,12 @@ function App() {
 
     // Effect to make API request based on selectedTab
     useEffect(() => {
+        if (selectedTab === 4) return;
+
         const fetchPets = async () => {
             setLoading(true); // Start loading
             setError(null); // Reset previous errors
+            setPets([]); // Clear pets
             try {
                 const speciesID = speciesIdMap[selectedTab];
                 const response = await fetch(
@@ -141,6 +151,7 @@ function App() {
                 let xmlNodes = jsonObj['ArrayOfXmlNode']?.['XmlNode'];
 
                 if (!xmlNodes) {
+                    setPets([]);
                     return;
                 }
 
@@ -170,6 +181,30 @@ function App() {
 
         fetchPets();
     }, [selectedTab]);
+
+    // Effect to update pets when on Favorites tab
+    useEffect(() => {
+        if (selectedTab === 4) {
+            setPets(favorites);
+            setLoading(false);
+        }
+    }, [selectedTab, favorites]);
+
+    // Check availability of favorites when pets list is updated
+    useEffect(() => {
+        // Don't check availability if we are viewing favorites (tab 4)
+        if (selectedTab === 4) return;
+
+        if (!loading && !error && pets.length > 0) {
+            const currentSpecies = selectedTab === 0 ? 'All' :
+                selectedTab === 1 ? 'Dog' :
+                    selectedTab === 2 ? 'Cat' :
+                        selectedTab === 3 ? 'Small Animal' : '';
+            if (currentSpecies) {
+                checkAvailability(pets, currentSpecies);
+            }
+        }
+    }, [pets, loading, error, selectedTab, checkAvailability]);
 
     // Function to open modal
     const openModal = (animalID: number) => {
@@ -281,7 +316,14 @@ function App() {
                 />
 
                 {/* Pet List */}
-                <PetList pets={paginatedPets} loading={loading} error={error} onPetClick={openModal} />
+                <PetList
+                    pets={paginatedPets}
+                    loading={loading}
+                    error={error}
+                    onPetClick={openModal}
+                    isFavorite={isFavorite}
+                    toggleFavorite={toggleFavorite}
+                />
 
                 {/* Pagination Controls */}
                 <PaginationControls totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} />
@@ -301,6 +343,14 @@ function App() {
                 modalData={modalData}
                 modalError={modalError}
                 modalLoading={modalLoading}
+                isFavorite={isFavorite}
+                toggleFavorite={toggleFavorite}
+            />
+
+            <DisclaimerDialog
+                open={isDisclaimerOpen}
+                onAccept={acceptDisclaimer}
+                onClose={closeDisclaimer}
             />
         </Box>
     );

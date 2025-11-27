@@ -1,15 +1,19 @@
 // PetCard.tsx
 
 import React from 'react';
-import { Card, CardMedia, CardContent, Typography, CardActionArea, Chip, Box } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography, CardActionArea, Chip, Box, IconButton } from '@mui/material';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
 import { AdoptableSearch } from '../types';
 import { getStageColor } from '../theme';
 interface PetCardProps {
     pet: AdoptableSearch;
     onClick: () => void;
+    isFavorite: boolean;
+    onToggleFavorite: () => void;
 }
 
-const PetCard: React.FC<PetCardProps> = ({ pet, onClick }) => {
+const PetCard: React.FC<PetCardProps> = ({ pet, onClick, isFavorite, onToggleFavorite }) => {
 
     const formatAge = (age: number): string => {
         if (age < 12) {
@@ -23,14 +27,37 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick }) => {
     return (
         <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
             <CardActionArea onClick={onClick} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <CardMedia
-                    component="img"
-                    height="240"
-                    image={pet.Photo || '/placeholder.png'}
-                    alt={pet.Name}
-                    onError={(e: any) => { e.target.onerror = null; e.target.src = '/placeholder.png'; }}
-                    sx={{ objectFit: 'cover' }}
-                />
+                <Box sx={{ position: 'relative', width: '100%' }}>
+                    <CardMedia
+                        component="img"
+                        height="240"
+                        image={pet.Photo || '/placeholder.png'}
+                        alt={pet.Name}
+                        onError={(e: any) => { e.target.onerror = null; e.target.src = '/placeholder.png'; }}
+                        sx={{ objectFit: 'cover' }}
+                    />
+                    <IconButton
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault(); // Prevent default action just in case
+                            onToggleFavorite();
+                        }}
+                        onMouseDown={(e) => e.stopPropagation()} // Stop propagation for mouse down as well
+                        sx={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            color: isFavorite ? '#FFD700' : 'white',
+                            backgroundColor: 'rgba(0,0,0,0.3)',
+                            '&:hover': {
+                                backgroundColor: 'rgba(0,0,0,0.5)',
+                            },
+                            zIndex: 10 // Ensure it's above the image
+                        }}
+                    >
+                        {isFavorite ? <StarIcon /> : <StarBorderIcon />}
+                    </IconButton>
+                </Box>
                 <CardContent sx={{ width: '100%', p: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold', mb: 0 }}>

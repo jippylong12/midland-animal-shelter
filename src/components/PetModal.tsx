@@ -13,8 +13,11 @@ import {
     Grid,
     Box,
     Chip,
+    IconButton,
 } from '@mui/material';
-import { AdoptableDetails, AdoptableDetailsXmlNode } from '../types';
+import StarIcon from '@mui/icons-material/Star';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import { AdoptableDetails, AdoptableDetailsXmlNode, AdoptableSearch } from '../types';
 import { XMLParser } from 'fast-xml-parser';
 import { getStageColor } from '../theme';
 
@@ -28,6 +31,8 @@ interface PetModalProps {
     modalData: AdoptableDetails | null;
     modalError: string | null;
     modalLoading: boolean;
+    isFavorite: (petID: number) => boolean;
+    toggleFavorite: (pet: AdoptableSearch) => void;
 }
 
 const parser = new XMLParser();
@@ -54,6 +59,8 @@ const PetModal: React.FC<PetModalProps> = ({
     modalData,
     modalError,
     modalLoading,
+    isFavorite,
+    toggleFavorite,
 }) => {
 
     const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
@@ -106,9 +113,26 @@ const PetModal: React.FC<PetModalProps> = ({
     return (
         <Dialog open={isOpen} onClose={onClose} maxWidth="md" fullWidth scroll="paper">
             <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="h5" component="div" fontWeight="bold">
-                    {modalData ? modalData.AnimalName : 'Pet Details'}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h5" component="div" fontWeight="bold">
+                        {modalData ? modalData.AnimalName : 'Pet Details'}
+                    </Typography>
+                    {modalData && (
+                        <IconButton
+                            onClick={() => {
+                                const petSearch = {
+                                    ...modalData,
+                                    Name: modalData.AnimalName,
+                                    Photo: modalData.Photo1,
+                                } as unknown as AdoptableSearch;
+                                toggleFavorite(petSearch);
+                            }}
+                            sx={{ color: isFavorite(modalData.ID) ? '#FFD700' : 'action.active' }}
+                        >
+                            {isFavorite(modalData.ID) ? <StarIcon /> : <StarBorderIcon />}
+                        </IconButton>
+                    )}
+                </Box>
                 <Button onClick={onClose} color="inherit">Close</Button>
             </DialogTitle>
             <DialogContent dividers>

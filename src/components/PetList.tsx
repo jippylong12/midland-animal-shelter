@@ -10,9 +10,11 @@ interface PetListProps {
     loading: boolean;
     error: string | null;
     onPetClick: (animalID: number) => void;
+    isFavorite: (petID: number) => boolean;
+    toggleFavorite: (pet: AdoptableSearch) => void;
 }
 
-const PetList: React.FC<PetListProps> = ({ pets, loading, error, onPetClick }) => {
+const PetList: React.FC<PetListProps> = ({ pets, loading, error, onPetClick, isFavorite, toggleFavorite }) => {
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', padding: 2 }}>
@@ -50,7 +52,12 @@ const PetList: React.FC<PetListProps> = ({ pets, loading, error, onPetClick }) =
                         opacity: 0, // Start invisible
                     }}
                 >
-                    <PetCard pet={pet} onClick={() => onPetClick(pet.ID)} />
+                    <PetCard
+                        pet={pet}
+                        onClick={() => onPetClick(pet.ID)}
+                        isFavorite={isFavorite(pet.ID)}
+                        onToggleFavorite={() => toggleFavorite(pet)}
+                    />
                 </Grid>
             ))}
         </Grid>
