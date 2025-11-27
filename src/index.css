@@ -1,8 +1,10 @@
 /* src/index.css */
 body {
   margin: 0;
-  font-family: 'Roboto', sans-serif;
-  background-color: white; /* Ensure the background is set to white or desired color */
+  font-family: 'Quicksand', 'Roboto', sans-serif;
+  background-color: #f4f6f8;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .App {
@@ -11,4 +13,16 @@ body {
 
 .pet-photo {
   object-fit: cover;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -6,13 +6,13 @@ import {
     DialogTitle,
     DialogContent,
     DialogContentText,
-    DialogActions,
     Button,
     CircularProgress,
     Typography,
     Link,
     Grid,
     Box,
+    Chip,
 } from '@mui/material';
 import { AdoptableDetails, AdoptableDetailsXmlNode } from '../types';
 import { XMLParser } from 'fast-xml-parser';
@@ -30,6 +30,18 @@ interface PetModalProps {
 }
 
 const parser = new XMLParser();
+
+const InfoRow = ({ label, value, subValue }: { label: string, value?: string | number | null, subValue?: string | null }) => {
+    if (!value) return null;
+    return (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', py: 0.5 }}>
+            <Typography variant="body2" color="text.secondary" fontWeight="bold">{label}</Typography>
+            <Typography variant="body2" color="text.primary" align="right">
+                {value} {subValue && `(${subValue})`}
+            </Typography>
+        </Box>
+    );
+};
 
 const PetModal: React.FC<PetModalProps> = ({
     isOpen,
@@ -85,150 +97,116 @@ const PetModal: React.FC<PetModalProps> = ({
     };
 
     return (
-        <Dialog open={isOpen} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle>Pet Details</DialogTitle>
-            <DialogContent>
+        <Dialog open={isOpen} onClose={onClose} maxWidth="md" fullWidth scroll="paper">
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h5" component="div" fontWeight="bold">
+                    {modalData ? modalData.AnimalName : 'Pet Details'}
+                </Typography>
+                <Button onClick={onClose} color="inherit">Close</Button>
+            </DialogTitle>
+            <DialogContent dividers>
                 {modalLoading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', padding: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', padding: 4 }}>
                         <CircularProgress />
                     </Box>
                 ) : modalError ? (
                     <DialogContentText color="error">{modalError}</DialogContentText>
                 ) : modalData ? (
-                    <Box>
-                        {/* Photo Carousel */}
-                        <Box sx={{ flexGrow: 1 }}>
-                            <Grid container spacing={2}>
+                    <Grid container spacing={3}>
+                        {/* Left Column: Images */}
+                        <Grid item xs={12} md={5}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 {[modalData.Photo1, modalData.Photo2, modalData.Photo3]
                                     .filter(Boolean)
                                     .map((photo, index) => (
-                                        <Grid item xs={12} sm={6} md={4} key={index}>
-                                            <img
-                                                src={photo || ''}
-                                                alt={`Photo ${index + 1}`}
-                                                style={{
-                                                    width: '100%',
-                                                    maxWidth: '300px',
-                                                    height: 'auto',
-                                                    objectFit: 'cover',
-                                                    borderRadius: '8px',
-                                                }}
-                                            />
-                                        </Grid>
+                                        <Box
+                                            key={index}
+                                            component="img"
+                                            src={photo || ''}
+                                            alt={`Photo ${index + 1}`}
+                                            sx={{
+                                                width: '100%',
+                                                borderRadius: 2,
+                                                boxShadow: 2,
+                                                objectFit: 'cover',
+                                                maxHeight: 400,
+                                            }}
+                                        />
                                     ))}
-                            </Grid>
-                        </Box>
-
-                        {/* Basic Information */}
-                        <Typography gutterBottom variant="h5" component="div" sx={{ marginTop: 2 }}>
-                            {modalData.AnimalName}
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            <strong>Species:</strong> {modalData.Species}
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            <strong>Breed:</strong> {modalData.PrimaryBreed}
-                            {modalData.SecondaryBreed && ` (${modalData.SecondaryBreed})`}
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            <strong>Gender:</strong> {modalData.Sex}
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            <strong>Age:</strong> {formatAge(modalData.Age)}
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            <strong>Location:</strong> {modalData.Location}
-                        </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                            <strong>Stage:</strong> {modalData.Stage}
-                        </Typography>
-
-                        {/* Additional Information */}
-                        <Box sx={{ marginTop: 2 }}>
-                            {modalData.SpecialNeeds && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Special Needs:</strong> {modalData.SpecialNeeds}
-                                </Typography>
-                            )}
-                            {modalData.BehaviorResult && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Behavior:</strong> {modalData.BehaviorResult}
-                                </Typography>
-                            )}
-                            {modalData.ReasonForSurrender && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Reason for Surrender:</strong> {modalData.ReasonForSurrender}
-                                </Typography>
-                            )}
-                            {modalData.DateOfSurrender && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Date of Surrender:</strong> {new Date(modalData.DateOfSurrender).toLocaleDateString()}
-                                </Typography>
-                            )}
-                            {modalData.PrevEnvironment && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Previous Environment:</strong> {modalData.PrevEnvironment}
-                                </Typography>
-                            )}
-                            <Typography variant="body1" color="text.secondary">
-                                <strong>Lived with Children:</strong> {modalData.LivedWithChildren}
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary">
-                                <strong>Lived with Other Animals:</strong> {modalData.LivedWithAnimals}
-                                {modalData.LivedWithAnimalTypes && ` (${modalData.LivedWithAnimalTypes})`}
-                            </Typography>
-                            {modalData.Altered && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Altered:</strong> {modalData.Altered}
-                                </Typography>
-                            )}
-                            {modalData.Declawed && modalData.Species.toLowerCase() === 'cat' && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Declawed:</strong> {modalData.Declawed}
-                                </Typography>
-                            )}
-                            {modalData.ChipNumber && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Chip Number:</strong> {modalData.ChipNumber}
-                                </Typography>
-                            )}
-                            {modalData.VideoID && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Video:</strong>{' '}
-                                    <Link href={`https://videos.example.com/${modalData.VideoID}`} target="_blank" rel="noopener">
-                                        Watch Video
-                                    </Link>
-                                </Typography>
-                            )}
-                            {modalData.Dsc && (
-                                <Typography variant="body1" color="text.secondary">
-                                    <strong>Description:</strong> {modalData.Dsc}
-                                </Typography>
-                            )}
-                        </Box>
-
-                        {/* Adoption Link */}
-                        {modalData.AdoptionApplicationUrl && (
-                            <Box sx={{ marginTop: 2 }}>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    href={modalData.AdoptionApplicationUrl}
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    Start Adoption Application
-                                </Button>
                             </Box>
-                        )}
-                    </Box>
+                        </Grid>
+
+                        {/* Right Column: Details */}
+                        <Grid item xs={12} md={7}>
+                            <Box sx={{ mb: 3 }}>
+                                <Typography variant="h4" gutterBottom color="primary.main" fontWeight="bold">
+                                    {modalData.AnimalName}
+                                </Typography>
+                                <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+                                    {modalData.PrimaryBreed} {modalData.SecondaryBreed && `• ${modalData.SecondaryBreed}`}
+                                </Typography>
+                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                                    <Chip label={modalData.Sex} color={modalData.Sex === 'Male' ? 'info' : 'secondary'} size="small" />
+                                    <Chip label={formatAge(modalData.Age)} size="small" />
+                                    <Chip label={modalData.Location} variant="outlined" size="small" />
+                                    <Chip label={modalData.Stage} color="success" variant="outlined" size="small" />
+                                </Box>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                <InfoRow label="Species" value={modalData.Species} />
+                                <InfoRow label="Special Needs" value={modalData.SpecialNeeds} />
+                                <InfoRow label="Behavior" value={modalData.BehaviorResult} />
+                                <InfoRow label="Reason for Surrender" value={modalData.ReasonForSurrender} />
+                                <InfoRow label="Date of Surrender" value={modalData.DateOfSurrender ? new Date(modalData.DateOfSurrender).toLocaleDateString() : null} />
+                                <InfoRow label="Previous Environment" value={modalData.PrevEnvironment} />
+                                <InfoRow label="Lived with Children" value={modalData.LivedWithChildren} />
+                                <InfoRow label="Lived with Animals" value={modalData.LivedWithAnimals} subValue={modalData.LivedWithAnimalTypes} />
+                                <InfoRow label="Altered" value={modalData.Altered} />
+                                {modalData.Species.toLowerCase() === 'cat' && <InfoRow label="Declawed" value={modalData.Declawed} />}
+                                <InfoRow label="Chip Number" value={modalData.ChipNumber} />
+
+                                {modalData.VideoID && (
+                                    <Box sx={{ mt: 1 }}>
+                                        <Typography variant="body2" fontWeight="bold">Video:</Typography>
+                                        <Link href={`https://videos.example.com/${modalData.VideoID}`} target="_blank" rel="noopener">
+                                            Watch Video
+                                        </Link>
+                                    </Box>
+                                )}
+
+                                {modalData.Dsc && (
+                                    <Box sx={{ mt: 2, p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+                                        <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+                                            {modalData.Dsc}
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </Box>
+
+                            {/* Adoption Link */}
+                            {modalData.AdoptionApplicationUrl && (
+                                <Box sx={{ marginTop: 4, display: 'flex', justifyContent: 'center' }}>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        size="large"
+                                        href={modalData.AdoptionApplicationUrl}
+                                        target="_blank"
+                                        rel="noopener"
+                                        fullWidth
+                                        sx={{ borderRadius: 8, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold' }}
+                                    >
+                                        Adopt {modalData.AnimalName}
+                                    </Button>
+                                </Box>
+                            )}
+                        </Grid>
+                    </Grid>
                 ) : (
                     <DialogContentText>No data available.</DialogContentText>
                 )}
             </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose}>Close</Button>
-            </DialogActions>
         </Dialog>
     );
 };

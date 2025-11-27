@@ -1,7 +1,7 @@
 // PetCard.tsx
 
 import React from 'react';
-import { Card, CardMedia, CardContent, Typography, CardActionArea } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography, CardActionArea, Chip, Box } from '@mui/material';
 import { AdoptableSearch } from '../types';
 interface PetCardProps {
     pet: AdoptableSearch;
@@ -20,38 +20,38 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick }) => {
     };
 
     return (
-        <Card>
-            <CardActionArea onClick={onClick}>
+        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardActionArea onClick={onClick} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                 <CardMedia
                     component="img"
-                    height="300"
+                    height="240"
                     image={pet.Photo || '/placeholder.png'}
                     alt={pet.Name}
                     onError={(e: any) => { e.target.onerror = null; e.target.src = '/placeholder.png'; }}
+                    sx={{ objectFit: 'cover' }}
                 />
-                <CardContent>
-                    <Typography gutterBottom variant="h6" component="div">
-                        {pet.Name}
+                <CardContent sx={{ width: '100%', p: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold', mb: 0 }}>
+                            {pet.Name}
+                        </Typography>
+                        <Chip
+                            label={pet.Sex}
+                            size="small"
+                            color={pet.Sex === 'Male' ? 'info' : 'secondary'}
+                            variant="outlined"
+                        />
+                    </Box>
+
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontStyle: 'italic' }}>
+                        {pet.PrimaryBreed}
+                        {pet.SecondaryBreed && ` • ${pet.SecondaryBreed}`}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        <strong>Species:</strong> {pet.Species}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        <strong>Breed:</strong> {pet.PrimaryBreed}
-                        {pet.SecondaryBreed && ` (${pet.SecondaryBreed})`}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        <strong>Gender:</strong> {pet.Sex}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        <strong>Age:</strong> {formatAge(pet.Age)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        <strong>Location:</strong> {pet.Location}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        <strong>Stage:</strong> {pet.Stage}
-                    </Typography>
+
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
+                        <Chip label={formatAge(pet.Age)} size="small" />
+                        <Chip label={pet.Location} size="small" variant="outlined" />
+                    </Box>
                 </CardContent>
             </CardActionArea>
         </Card>
