@@ -8,7 +8,7 @@ import {
     AdoptableSearch,
     Root,
 } from './types';
-import {SelectChangeEvent, useMediaQuery} from '@mui/material';
+import { SelectChangeEvent, useMediaQuery } from '@mui/material';
 
 // MUI Icons
 import PetsIcon from '@mui/icons-material/Pets';
@@ -139,7 +139,7 @@ function App() {
                 const jsonObj = parser.parse(xmlData) as Root;
 
                 // Access the ArrayOfXmlNode.XmlNode property with type guards
-                let xmlNodes = jsonObj['ns0:ArrayOfXmlNode']?.['ns0:XmlNode'];
+                let xmlNodes = jsonObj['ArrayOfXmlNode']?.['XmlNode'];
 
                 if (!xmlNodes) {
                     return;

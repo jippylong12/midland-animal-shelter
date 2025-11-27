@@ -33,11 +33,11 @@ export interface XmlNode {
 }
 
 export interface ArrayOfXmlNode {
-    "ns0:XmlNode": XmlNode[];
+    "XmlNode": XmlNode[];
 }
 
 export interface Root {
-    "ns0:ArrayOfXmlNode": ArrayOfXmlNode
+    "ArrayOfXmlNode": ArrayOfXmlNode
 }
 
 export interface AdoptableDetailsXmlNode {
