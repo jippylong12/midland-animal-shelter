@@ -29,10 +29,11 @@ import PetModal from './components/PetModal';
 import Footer from './components/Footer';
 import PaginationControls from './components/PaginationControls';
 
+const parser = new XMLParser();
+
 function App() {
     // State for search query
     const [searchQuery, setSearchQuery] = useState('');
-    const parser = new XMLParser();
 
     // State for selected tab
     const [selectedTab, setSelectedTab] = useState<number>(0);
@@ -169,7 +170,7 @@ function App() {
         };
 
         fetchPets();
-    }, [selectedTab, parser]);
+    }, [selectedTab]);
 
     // Function to open modal
     const openModal = (animalID: number) => {
