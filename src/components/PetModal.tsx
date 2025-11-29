@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { AdoptableDetails, AdoptableDetailsXmlNode, AdoptableSearch } from '../types';
 import { XMLParser } from 'fast-xml-parser';
 import { getStageColor } from '../theme';
@@ -33,6 +34,9 @@ interface PetModalProps {
     modalLoading: boolean;
     isFavorite: (petID: number) => boolean;
     toggleFavorite: (pet: AdoptableSearch) => void;
+    isSeenEnabled: boolean;
+    markAsSeen: (pet: AdoptableSearch) => void;
+    isSeen: (pet: AdoptableSearch) => boolean;
 }
 
 const parser = new XMLParser();
@@ -61,6 +65,9 @@ const PetModal: React.FC<PetModalProps> = ({
     modalLoading,
     isFavorite,
     toggleFavorite,
+    isSeenEnabled,
+    markAsSeen,
+    isSeen,
 }) => {
 
     const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
@@ -130,6 +137,21 @@ const PetModal: React.FC<PetModalProps> = ({
                             sx={{ color: isFavorite(modalData.ID) ? '#FFD700' : 'action.active' }}
                         >
                             {isFavorite(modalData.ID) ? <StarIcon /> : <StarBorderIcon />}
+                        </IconButton>
+                    )}
+                    {modalData && isSeenEnabled && (
+                        <IconButton
+                            onClick={() => {
+                                const petSearch = {
+                                    ...modalData,
+                                    Name: modalData.AnimalName,
+                                    Photo: modalData.Photo1,
+                                } as unknown as AdoptableSearch;
+                                markAsSeen(petSearch);
+                            }}
+                            sx={{ color: isSeen(modalData as unknown as AdoptableSearch) ? 'primary.main' : 'action.active' }}
+                        >
+                            <VisibilityIcon />
                         </IconButton>
                     )}
                 </Box>

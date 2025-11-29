@@ -31,6 +31,7 @@ import Footer from './components/Footer';
 import PaginationControls from './components/PaginationControls';
 import DisclaimerDialog from './components/DisclaimerDialog';
 import { useFavorites } from './hooks/useFavorites';
+import { useSeenPets } from './hooks/useSeenPets';
 
 const parser = new XMLParser();
 
@@ -56,6 +57,7 @@ function App() {
     const [gender, setGender] = useState('');
     const [age, setAge] = useState<{ min: string; max: string }>({ min: '', max: '' }); // Changed to object for min/max
     const [stage, setStage] = useState(''); // New state for stage
+    const [hideSeen, setHideSeen] = useState<boolean>(false);
 
     // State for sorting
     const [sortBy, setSortBy] = useState<string>(''); // '' means no sorting
@@ -81,6 +83,9 @@ function App() {
 
     // Favorites Hook
     const { favorites, toggleFavorite, isFavorite, isDisclaimerOpen, acceptDisclaimer, closeDisclaimer, checkAvailability } = useFavorites();
+
+    // Seen Pets Hook
+    const { isSeenEnabled, toggleSeenFeature, markAsSeen, markAllAsSeen, isSeen } = useSeenPets();
 
     // Handler functions
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -251,6 +256,9 @@ function App() {
         // Filter by stage
         if (stage && pet.Stage !== stage) return false;
 
+        // Filter by seen status
+        if (isSeenEnabled && hideSeen && isSeen(pet)) return false;
+
         return true;
     });
 
@@ -313,6 +321,10 @@ function App() {
                     uniqueStages={uniqueStages}
                     sortBy={sortBy}
                     onSortByChange={handleSortByChange}
+                    isSeenEnabled={isSeenEnabled}
+                    onToggleSeenFeature={toggleSeenFeature}
+                    hideSeen={hideSeen}
+                    onHideSeenChange={setHideSeen}
                 />
 
                 {/* Pet List */}
@@ -323,6 +335,10 @@ function App() {
                     onPetClick={openModal}
                     isFavorite={isFavorite}
                     toggleFavorite={toggleFavorite}
+                    isSeenEnabled={isSeenEnabled}
+                    markAsSeen={markAsSeen}
+                    markAllAsSeen={markAllAsSeen}
+                    isSeen={isSeen}
                 />
 
                 {/* Pagination Controls */}
@@ -345,6 +361,9 @@ function App() {
                 modalLoading={modalLoading}
                 isFavorite={isFavorite}
                 toggleFavorite={toggleFavorite}
+                isSeenEnabled={isSeenEnabled}
+                markAsSeen={markAsSeen}
+                isSeen={isSeen}
             />
 
             <DisclaimerDialog

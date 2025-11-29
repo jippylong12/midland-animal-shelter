@@ -4,6 +4,7 @@ import React from 'react';
 import { Card, CardMedia, CardContent, Typography, CardActionArea, Chip, Box, IconButton } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { AdoptableSearch } from '../types';
 import { getStageColor } from '../theme';
 interface PetCardProps {
@@ -11,9 +12,12 @@ interface PetCardProps {
     onClick: () => void;
     isFavorite: boolean;
     onToggleFavorite: () => void;
+    isSeenEnabled: boolean;
+    onMarkAsSeen: () => void;
+    isSeen: boolean;
 }
 
-const PetCard: React.FC<PetCardProps> = ({ pet, onClick, isFavorite, onToggleFavorite }) => {
+const PetCard: React.FC<PetCardProps> = ({ pet, onClick, isFavorite, onToggleFavorite, isSeenEnabled, onMarkAsSeen, isSeen }) => {
 
     const formatAge = (age: number): string => {
         if (age < 12) {
@@ -57,8 +61,33 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick, isFavorite, onToggleFav
                     >
                         {isFavorite ? <StarIcon /> : <StarBorderIcon />}
                     </IconButton>
+
+                    {/* Seen Button */}
+                    {isSeenEnabled && (
+                        <IconButton
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                onMarkAsSeen();
+                            }}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            sx={{
+                                position: 'absolute',
+                                top: 8,
+                                left: 8, // Position to the top-left
+                                color: isSeen ? 'rgba(255, 255, 255, 0.8)' : 'white',
+                                backgroundColor: 'rgba(0,0,0,0.3)',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(0,0,0,0.5)',
+                                },
+                                zIndex: 10
+                            }}
+                        >
+                            <VisibilityIcon />
+                        </IconButton>
+                    )}
                 </Box>
-                <CardContent sx={{ width: '100%', p: 2 }}>
+                <CardContent sx={{ width: '100%', p: 2, opacity: isSeen ? 0.6 : 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold', mb: 0 }}>
                             {pet.Name}

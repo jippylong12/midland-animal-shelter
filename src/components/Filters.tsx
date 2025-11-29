@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, TextField, FormControl, Select, MenuItem, Box, Autocomplete, InputLabel } from '@mui/material';
+import { Grid, TextField, FormControl, Select, MenuItem, Box, Autocomplete, InputLabel, Switch, FormControlLabel, Checkbox, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material';
 
 interface FiltersProps {
@@ -17,6 +17,10 @@ interface FiltersProps {
     uniqueStages: string[];
     sortBy: string;
     onSortByChange: (event: SelectChangeEvent<string>) => void;
+    isSeenEnabled: boolean;
+    onToggleSeenFeature: () => void;
+    hideSeen: boolean;
+    onHideSeenChange: (value: boolean) => void;
 }
 
 const Filters: React.FC<FiltersProps> = ({
@@ -34,7 +38,13 @@ const Filters: React.FC<FiltersProps> = ({
     uniqueStages,
     sortBy,
     onSortByChange,
+    isSeenEnabled,
+    onToggleSeenFeature,
+    hideSeen,
+    onHideSeenChange,
 }) => {
+    const [openDisclaimer, setOpenDisclaimer] = React.useState(false);
+
     return (
         <Grid container spacing={3} alignItems="center" sx={{ marginBottom: 3 }}>
             {/* Search Bar */}
@@ -151,6 +161,63 @@ const Filters: React.FC<FiltersProps> = ({
                     </Select>
                 </FormControl>
             </Grid>
+
+            {/* Seen Feature Toggle */}
+            <Grid item xs={12} md={2}>
+                <FormControlLabel
+                    control={
+                        <Switch
+                            checked={isSeenEnabled}
+                            onChange={() => {
+                                if (!isSeenEnabled) {
+                                    setOpenDisclaimer(true);
+                                } else {
+                                    onToggleSeenFeature();
+                                }
+                            }}
+                            color="primary"
+                        />
+                    }
+                    label="Enable Seen History"
+                />
+                {isSeenEnabled && (
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={hideSeen}
+                                onChange={(e) => onHideSeenChange(e.target.checked)}
+                                color="primary"
+                            />
+                        }
+                        label="Hide Seen"
+                    />
+                )}
+            </Grid>
+
+            {/* Disclaimer Dialog */}
+            <Dialog
+                open={openDisclaimer}
+                onClose={() => setOpenDisclaimer(false)}
+            >
+                <DialogTitle>Enable Seen History?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Enabling this feature will store your viewed pets in your browser's local storage indefinitely.
+                        This data is not shared with anyone else. Do you want to proceed?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenDisclaimer(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button onClick={() => {
+                        onToggleSeenFeature();
+                        setOpenDisclaimer(false);
+                    }} color="primary" autoFocus>
+                        Confirm
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Grid>
     );
 };
