@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Box, Typography, Link } from '@mui/material';
+import { APP_VERSION } from '../version';
 
 const Footer: React.FC = () => {
     return (
@@ -24,6 +25,9 @@ const Footer: React.FC = () => {
                     https://www.midlandtexas.gov/1030/Animals-currently-in-the-Shelter
                 </Link>
                 .
+            </Typography>
+            <Typography variant="caption" display="block" sx={{ marginTop: 1 }}>
+                v{APP_VERSION}
             </Typography>
         </Box>
     );
