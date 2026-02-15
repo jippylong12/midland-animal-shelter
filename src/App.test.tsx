@@ -7,6 +7,7 @@ import theme from './theme';
 import { buildDetailsXml, buildSearchXml, createPet, createPetDetails } from './test/fixtures';
 import { NEW_MATCH_STORAGE_KEY } from './utils/newMatchTracker';
 import { DATA_FRESHNESS_KEY } from './utils/dataFreshness';
+import { SEARCH_PRESET_STORAGE_KEY } from './utils/searchPresets';
 
 const toResponse = (body: string, status = 200): Response =>
     ({
@@ -55,6 +56,62 @@ describe('App', () => {
 
         await userEvent.click(screen.getByRole('button', { name: 'Clear Filters' }));
         await screen.findByText('Rex');
+    });
+
+    it('saves and reapplies a named search preset', async () => {
+        const pets = buildSearchXml([
+            createPet({ ID: 1, Name: 'Bella', Species: 'Dog', PrimaryBreed: 'Labrador Retriever' }),
+            createPet({ ID: 2, Name: 'Rex', Species: 'Dog', PrimaryBreed: 'Beagle' }),
+        ]);
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(pets));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Bella');
+
+        await userEvent.type(screen.getByRole('textbox', { name: 'Search by name or breed' }), 'bella');
+        await userEvent.type(screen.getByLabelText('Preset name'), 'My Dogs');
+        await userEvent.click(screen.getByRole('button', { name: 'Save Search Preset' }));
+
+        await screen.findByText('My Dogs');
+
+        await userEvent.clear(screen.getByRole('textbox', { name: 'Search by name or breed' }));
+        await userEvent.type(screen.getByRole('textbox', { name: 'Search by name or breed' }), 'rex');
+        expect(await screen.findByText('Rex')).toBeInTheDocument();
+        expect(screen.queryByText('Bella')).not.toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', { name: 'My Dogs' }));
+
+        expect((screen.getByRole('textbox', { name: 'Search by name or breed' }) as HTMLInputElement).value).toBe('bella');
+        expect(await screen.findByText('Bella')).toBeInTheDocument();
+        expect(screen.queryByText('Rex')).not.toBeInTheDocument();
+
+        const savedPresets = JSON.parse(localStorage.getItem(SEARCH_PRESET_STORAGE_KEY) || '[]');
+        expect(savedPresets).toHaveLength(1);
+        expect(savedPresets[0].name).toBe('My Dogs');
+    });
+
+    it('deletes a saved search preset', async () => {
+        const pets = buildSearchXml([
+            createPet({ ID: 1, Name: 'Bella', Species: 'Dog', PrimaryBreed: 'Labrador Retriever' }),
+            createPet({ ID: 2, Name: 'Rex', Species: 'Dog', PrimaryBreed: 'Beagle' }),
+        ]);
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(pets));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Bella');
+
+        await userEvent.type(screen.getByLabelText('Preset name'), 'Delete Me');
+        await userEvent.click(screen.getByRole('button', { name: 'Save Search Preset' }));
+        await screen.findByText('Delete Me');
+
+        await userEvent.click(screen.getByLabelText('Delete preset Delete Me'));
+
+        expect(screen.queryByRole('button', { name: 'Delete Me' })).not.toBeInTheDocument();
+        expect(JSON.parse(localStorage.getItem(SEARCH_PRESET_STORAGE_KEY) || '[]')).toHaveLength(0);
     });
 
     it('hydrates tab/filter/page state from query params', async () => {

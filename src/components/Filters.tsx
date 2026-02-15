@@ -20,8 +20,12 @@ import {
     Typography,
     Paper,
     Stack,
+    IconButton,
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+
+import { SearchPreset } from '../utils/searchPresets';
 
 interface FiltersProps {
     searchQuery: string;
@@ -42,6 +46,10 @@ interface FiltersProps {
     onToggleSeenFeature: () => void;
     hideSeen: boolean;
     onHideSeenChange: (value: boolean) => void;
+    savedSearchPresets: SearchPreset[];
+    onSaveSearchPreset: (presetName: string) => void;
+    onApplySearchPreset: (presetId: string) => void;
+    onDeleteSearchPreset: (presetId: string) => void;
     hasActiveFilters: boolean;
     onClearFilters: () => void;
     newMatchCount: number;
@@ -69,6 +77,10 @@ const Filters: React.FC<FiltersProps> = ({
     onToggleSeenFeature,
     hideSeen,
     onHideSeenChange,
+    savedSearchPresets,
+    onSaveSearchPreset,
+    onApplySearchPreset,
+    onDeleteSearchPreset,
     hasActiveFilters,
     onClearFilters,
     newMatchCount,
@@ -77,44 +89,118 @@ const Filters: React.FC<FiltersProps> = ({
     onClearAllNewMatches,
 }) => {
     const [openDisclaimer, setOpenDisclaimer] = React.useState(false);
+    const [searchPresetName, setSearchPresetName] = React.useState('');
+
+    const canSaveSearchPreset = searchPresetName.trim().length > 0;
+
+    const handleSavePreset = () => {
+        if (!canSaveSearchPreset) return;
+        onSaveSearchPreset(searchPresetName);
+        setSearchPresetName('');
+    };
 
     return (
         <Paper sx={{ mb: 3, p: { xs: 2, md: 3 }, backdropFilter: 'blur(6px)', bgcolor: 'rgba(255,255,255,0.9)' }}>
             <Stack
-                direction={{ xs: 'column', md: 'row' }}
-                justifyContent="space-between"
-                alignItems={{ xs: 'flex-start', md: 'center' }}
-                spacing={1}
+                direction="column"
+                spacing={1.2}
                 sx={{ mb: 2 }}
             >
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: 'flex-start', md: 'center' }}
+                    spacing={1}
+                >
+                    <Box>
+                        <Typography variant="h6">Find the right pet faster</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Combine filters to narrow results, then open a card for full details.
+                        </Typography>
+                    </Box>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <TextField
+                            size="small"
+                            label="Preset name"
+                            value={searchPresetName}
+                            onChange={(event) => setSearchPresetName(event.target.value)}
+                            placeholder="Name this preset"
+                        />
+                        <Button
+                            variant="outlined"
+                            onClick={handleSavePreset}
+                            disabled={!canSaveSearchPreset}
+                        >
+                            Save Search Preset
+                        </Button>
+                    </Stack>
+                </Stack>
+
                 <Box>
-                    <Typography variant="h6">Find the right pet faster</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Combine filters to narrow results, then open a card for full details.
-                    </Typography>
+                    {savedSearchPresets.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                            No saved search presets yet.
+                        </Typography>
+                    ) : (
+                        <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                            {savedSearchPresets.map((preset) => (
+                                <Stack
+                                    direction="row"
+                                    alignItems="center"
+                                    spacing={0.3}
+                                    key={preset.id}
+                                    sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 0.3 }}
+                                >
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => onApplySearchPreset(preset.id)}
+                                    >
+                                        {preset.name}
+                                    </Button>
+                                    <IconButton
+                                        size="small"
+                                        color="error"
+                                        onClick={() => onDeleteSearchPreset(preset.id)}
+                                        aria-label={`Delete preset ${preset.name}`}
+                                    >
+                                        <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                </Stack>
+                            ))}
+                        </Stack>
+                    )}
                 </Box>
-                <Button
-                    variant="outlined"
-                    onClick={onClearFilters}
-                    disabled={!hasActiveFilters}
+
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: 'flex-start', md: 'center' }}
+                    spacing={1}
                 >
-                    Clear Filters
-                </Button>
-                <Button
-                    variant="outlined"
-                    color="warning"
-                    onClick={onClearCurrentTabNewMatches}
-                    disabled={newMatchCount === 0}
-                >
-                    Clear New Matches{newMatchCount > 0 ? ` (${newMatchCount})` : ''}
-                </Button>
-                <Button
-                    variant="text"
-                    onClick={onClearAllNewMatches}
-                    disabled={!hasNewMatchHistory}
-                >
-                    Clear All New-Match History
-                </Button>
+                    <Button
+                        variant="outlined"
+                        onClick={onClearFilters}
+                        disabled={!hasActiveFilters}
+                    >
+                        Clear Filters
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        color="warning"
+                        onClick={onClearCurrentTabNewMatches}
+                        disabled={newMatchCount === 0}
+                    >
+                        Clear New Matches{newMatchCount > 0 ? ` (${newMatchCount})` : ''}
+                    </Button>
+                    <Button
+                        variant="text"
+                        onClick={onClearAllNewMatches}
+                        disabled={!hasNewMatchHistory}
+                    >
+                        Clear All New-Match History
+                    </Button>
+                </Stack>
             </Stack>
 
             <Grid container spacing={2} alignItems="center">

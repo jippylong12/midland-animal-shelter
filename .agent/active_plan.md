@@ -1,11 +1,11 @@
 ## Status
 - Completed.
-- Follow-up completed: moved data freshness UI from inline alert to compact footer presentation for reduced prominence.
+- Implemented `FTR-M01` (saved search presets) end-to-end with localStorage persistence and preset controls.
 
-# Active Plan: Implement FTR-H04 (Data freshness and stale-data banner)
+# Active Plan: Implement FTR-M01 (Saved search presets)
 
 ## Context
-- Implement `FTR-H04` from `docs/FEATURES_FUTURE.md`: show last successful sync time and clear stale-state messaging without changing API contract.
+- Implement `FTR-M01` from `docs/FEATURES_FUTURE.md`: allow users to store and reapply common search/filter states with one-click preset actions.
 
 ## Constraints
 - Keep React + TypeScript + MUI only.
@@ -15,17 +15,13 @@
 - Validate with `npm run lint`, `npm run build`, and targeted test suite(s).
 
 ## Atomic Steps
-1. Add a client-side freshness tracker with per-tab timestamp persistence in `localStorage`.
-   - Constraint mapping: no API contract changes; existing fetch pipeline remains intact.
-2. Update app fetch flow to capture `Date.now()` only on successful list fetches and hydrate banner state from storage.
-   - Constraint mapping: keep current data loading/error behavior stable.
-3. Add stale detection logic with configurable interval threshold and clear stale-state messaging text.
-   - Constraint mapping: avoid changing data schema or requiring server state.
-4. Add a reusable freshness display component (banner/alert) and integrate it in app layout.
-   - Constraint mapping: preserve MUI styling direction and existing layout hierarchy.
-5. Extend `App.test.tsx` and add utility tests (if needed) to validate:
-   - timestamp persistence across reloads,
-   - stale threshold messaging,
-   - and successful sync updates.
-6. Update `docs/FEATURES_FUTURE.md` for `FTR-H04` status/date/notes.
-7. Run `npm run lint`, `npm run build`, and `npm run test` for impacted suites.
+1. Add `src/utils/searchPresets.ts` with localStorage read/write, schema normalization, and lightweight validation.
+   - Constraint mapping: no API contract changes and resilient handling of malformed storage payloads.
+2. Add preset save/apply/delete event handlers to `src/App.tsx` while reusing existing filter state shape.
+   - Constraint mapping: keep current tabs, filters, and list rendering state in `App` as the source of truth.
+3. Extend `src/components/Filters.tsx` to surface preset controls (save, apply, delete) with clear labels and affordances.
+   - Constraint mapping: preserve existing MUI layout patterns and accessibility for existing controls.
+4. Add utility tests (`src/utils/searchPresets.test.ts`) and App-level integration tests for preset behavior.
+   - Constraint mapping: align with existing Vitest + RTL patterns.
+5. Update `docs/FEATURES_FUTURE.md` to mark `FTR-M01` as shipped and refresh progress metrics.
+6. Run `npm run lint`, `npm run test`, and `npm run build`.

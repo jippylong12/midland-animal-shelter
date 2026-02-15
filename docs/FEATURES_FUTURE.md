@@ -7,11 +7,11 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 | Metric | Value |
 |---|---:|
 | Total backlog items | 12 |
-| Backlog | 9 |
+| Backlog | 8 |
 | Planned | 0 |
 | In Progress | 0 |
 | Blocked | 0 |
-| Shipped | 3 |
+| Shipped | 4 |
 | Dropped | 0 |
 
 ## High
@@ -27,7 +27,7 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 
 | ID | Suggestion | Why this matters | Status | Owner | Target Version | Implemented On | Notes |
 |---|---|---|---|---|---|---|---|
-| FTR-M01 | Saved search presets (local only) | Frequent users can save common filter combinations and reapply in one click. | Backlog | Unassigned | v1.12 |  | Store named presets in localStorage with lightweight validation. |
+| FTR-M01 | Saved search presets (local only) | Frequent users can save common filter combinations and reapply in one click. | Shipped | Engineering | v1.12 | 2026-02-15 | Store named presets in localStorage with lightweight validation. |
 | FTR-M02 | Adoption checklist and notes per pet | Helps households track decision criteria without leaving the app, increasing completion confidence. | Backlog | Unassigned | v1.12 |  | Persist checklist/notes locally and tie by pet ID. |
 | FTR-M03 | Accessibility upgrade pass (keyboard + focus + SR labels) | Improves usability for keyboard and assistive tech users and reduces interaction friction on mobile. | Backlog | Unassigned | v1.13 |  | Add focus management for modal/tabs and aria labels for icon-only actions. |
 | FTR-M04 | Offline fallback for last successful list | Keeps the app useful during temporary network issues by showing cached data with clear stale indicators. | Backlog | Unassigned | v1.13 |  | Cache list/detail responses in browser storage; read-only fallback mode. |
@@ -43,12 +43,12 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 
 ## Top 3 next items
 
-1. **FTR-M01 Saved search presets (local only)**
-   - Dependency: define a lightweight and backward compatible preset schema.
-   - Risk: stale/invalid presets corrupting future visits if shape changes.
-2. **FTR-M02 Accessibility upgrade pass (keyboard + focus + SR labels)**
+1. **FTR-M02 Accessibility upgrade pass (keyboard + focus + SR labels)**
    - Dependency: inventory icon-only controls and modal focus traps.
    - Risk: inconsistent accessibility patterns across existing icon actions.
-3. **FTR-M03 Adoption checklist and notes per pet**
+2. **FTR-M03 Adoption checklist and notes per pet**
    - Dependency: consistent data model for pet-specific notes fields.
    - Risk: notes fields diverging from current card and modal expectations.
+3. **FTR-M04 Offline fallback for last successful list**
+   - Dependency: define cache invalidation and stale read policy.
+   - Risk: stale data presenting as fresh if timestamps are mishandled.

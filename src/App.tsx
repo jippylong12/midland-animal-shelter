@@ -54,6 +54,14 @@ import {
     readPetListSyncState,
     writePetListSyncState,
 } from './utils/dataFreshness';
+import {
+    createSearchPreset,
+    readSearchPresets,
+    SearchPreset,
+    SearchPresetFilters,
+    normalizeSearchPresetFilters,
+    writeSearchPresets,
+} from './utils/searchPresets';
 
 const parser = new XMLParser();
 const speciesIdMap: number[] = [0, 1, 2, 1003, -1];
@@ -196,6 +204,8 @@ function App() {
     const [error, setError] = useState<string | null>(null);
     const [syncState, setSyncState] = useState<Record<number, number>>({});
 
+    const [searchPresets, setSearchPresets] = useState<SearchPreset[]>(() => readSearchPresets());
+
     // State for Modal
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [selectedAnimalID, setSelectedAnimalID] = useState<number | null>(null);
@@ -302,6 +312,65 @@ function App() {
         setStage('');
         setSortBy('');
         setHideSeen(false);
+    };
+
+    const getCurrentPresetFilters = (): SearchPresetFilters => ({
+        ...normalizeSearchPresetFilters({
+            searchQuery,
+            breed,
+            gender,
+            age,
+            stage,
+            sortBy,
+            hideSeen,
+        }),
+    });
+
+    const handleSaveSearchPreset = (presetName: string) => {
+        const preset = createSearchPreset(presetName, selectedTab, getCurrentPresetFilters());
+        if (!preset.name) return;
+
+        setSearchPresets((prev) => {
+            const normalizedName = preset.name.toLowerCase();
+            const duplicateIndex = prev.findIndex((item) => item.name.toLowerCase() === normalizedName);
+            const next = [...prev];
+
+            if (duplicateIndex >= 0) {
+                next[duplicateIndex] = {
+                    ...next[duplicateIndex],
+                    selectedTab: preset.selectedTab,
+                    filters: preset.filters,
+                };
+            } else {
+                next.unshift(preset);
+            }
+
+            writeSearchPresets(next);
+            return next;
+        });
+    };
+
+    const handleApplySearchPreset = (presetId: string) => {
+        const preset = searchPresets.find((item) => item.id === presetId);
+        if (!preset) return;
+
+        setSelectedTab(preset.selectedTab);
+        setSearchQuery(preset.filters.searchQuery);
+        setBreed(preset.filters.breed);
+        setGender(preset.filters.gender);
+        setAge(preset.filters.age);
+        setStage(preset.filters.stage);
+        setSortBy(preset.filters.sortBy);
+        setHideSeen(preset.filters.hideSeen);
+        setCurrentPage(1);
+    };
+
+    const handleDeleteSearchPreset = (presetId: string) => {
+        setSearchPresets((prev) => {
+            const next = prev.filter((item) => item.id !== presetId);
+            writeSearchPresets(next);
+            return next;
+        });
     };
 
     const getSpeciesKeysForCurrentTab = useCallback(() => {
@@ -705,6 +774,10 @@ function App() {
                     onToggleSeenFeature={toggleSeenFeature}
                     hideSeen={hideSeen}
                     onHideSeenChange={setHideSeen}
+                    savedSearchPresets={searchPresets}
+                    onSaveSearchPreset={handleSaveSearchPreset}
+                    onApplySearchPreset={handleApplySearchPreset}
+                    onDeleteSearchPreset={handleDeleteSearchPreset}
                     hasActiveFilters={hasActiveFilters}
                     onClearFilters={handleClearFilters}
                     newMatchCount={newMatchCount}
