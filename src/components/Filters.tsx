@@ -44,6 +44,10 @@ interface FiltersProps {
     onHideSeenChange: (value: boolean) => void;
     hasActiveFilters: boolean;
     onClearFilters: () => void;
+    newMatchCount: number;
+    hasNewMatchHistory: boolean;
+    onClearCurrentTabNewMatches: () => void;
+    onClearAllNewMatches: () => void;
 }
 
 const Filters: React.FC<FiltersProps> = ({
@@ -67,6 +71,10 @@ const Filters: React.FC<FiltersProps> = ({
     onHideSeenChange,
     hasActiveFilters,
     onClearFilters,
+    newMatchCount,
+    hasNewMatchHistory,
+    onClearCurrentTabNewMatches,
+    onClearAllNewMatches,
 }) => {
     const [openDisclaimer, setOpenDisclaimer] = React.useState(false);
 
@@ -91,6 +99,21 @@ const Filters: React.FC<FiltersProps> = ({
                     disabled={!hasActiveFilters}
                 >
                     Clear Filters
+                </Button>
+                <Button
+                    variant="outlined"
+                    color="warning"
+                    onClick={onClearCurrentTabNewMatches}
+                    disabled={newMatchCount === 0}
+                >
+                    Clear New Matches{newMatchCount > 0 ? ` (${newMatchCount})` : ''}
+                </Button>
+                <Button
+                    variant="text"
+                    onClick={onClearAllNewMatches}
+                    disabled={!hasNewMatchHistory}
+                >
+                    Clear All New-Match History
                 </Button>
             </Stack>
 

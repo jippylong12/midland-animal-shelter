@@ -39,3 +39,6 @@
 - **Topic:** URL-synced navigation state
 - **Rule:** Keep tab/filter/page state in query params through explicit `parse`/`build` helpers, and only re-emit to history when state is valid; restore on `popstate` with guarded pagination clamping.
 - **Reason:** It enables deep-linking and back/forward restoration for complex list filters without introducing route libraries or losing UX semantics during transient loading states.
+- **Topic:** New-match detection without API contract changes
+- **Rule:** Store previous visible species snapshots in localStorage using normalized keys (`species|id`) and update snapshots after each successful list fetch.
+- **Reason:** This allows “new since last visit” highlighting and reset semantics entirely on the client while preventing accidental mismatches from case/spelling variations.

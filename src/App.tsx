@@ -36,6 +36,15 @@ import PaginationControls from './components/PaginationControls';
 import DisclaimerDialog from './components/DisclaimerDialog';
 import { useFavorites } from './hooks/useFavorites';
 import { useSeenPets } from './hooks/useSeenPets';
+import {
+    clearSpeciesNewMatchHistory,
+    computeNewMatches,
+    getPetMatchKey,
+    getSpeciesMatchKey,
+    NEW_MATCH_STORAGE_KEY,
+    readNewMatchStorage,
+    writeNewMatchStorage,
+} from './utils/newMatchTracker';
 
 const parser = new XMLParser();
 const speciesIdMap: number[] = [0, 1, 2, 1003, -1];
@@ -166,6 +175,8 @@ function App() {
 
     // State for pets data
     const [pets, setPets] = useState<AdoptableSearch[]>([]);
+    const [newMatchPetIds, setNewMatchPetIds] = useState<Set<string>>(new Set());
+    const [hasNewMatchHistory, setHasNewMatchHistory] = useState<boolean>(false);
 
     // State for loading and error
     const [loading, setLoading] = useState<boolean>(true);
@@ -239,6 +250,36 @@ function App() {
         setHideSeen(false);
     };
 
+    const getSpeciesKeysForCurrentTab = useCallback(() => {
+        if (selectedTab === 0) {
+            return Array.from(new Set(
+                pets.map((pet) => getSpeciesMatchKey(pet.Species)).filter(Boolean)
+            ));
+        }
+
+        if (selectedTab === 1) return ['dog'];
+        if (selectedTab === 2) return ['cat'];
+        if (selectedTab === 3) return ['small animal'];
+        return [];
+    }, [pets, selectedTab]);
+
+    const clearCurrentTabNewMatches = useCallback(() => {
+        if (selectedTab === 4) return;
+
+        const currentStore = readNewMatchStorage();
+        const speciesKeys = getSpeciesKeysForCurrentTab();
+        const nextStore = clearSpeciesNewMatchHistory(currentStore, speciesKeys, pets);
+        writeNewMatchStorage(nextStore);
+        setHasNewMatchHistory(Object.keys(nextStore).length > 0);
+        setNewMatchPetIds(new Set());
+    }, [getSpeciesKeysForCurrentTab, pets, selectedTab]);
+
+    const clearAllNewMatches = useCallback(() => {
+        localStorage.removeItem(NEW_MATCH_STORAGE_KEY);
+        setHasNewMatchHistory(false);
+        setNewMatchPetIds(new Set());
+    }, []);
+
     // Handle Page Change
     const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
         setCurrentPage(page);
@@ -304,6 +345,11 @@ function App() {
         return () => window.removeEventListener('popstate', onPopState);
     }, [syncStateFromUrl]);
 
+    useEffect(() => {
+        const initialStore = readNewMatchStorage();
+        setHasNewMatchHistory(Object.keys(initialStore).length > 0);
+    }, []);
+
     // Effect to make API request based on selectedTab
     useEffect(() => {
         if (selectedTab === 4) return;
@@ -314,6 +360,7 @@ function App() {
             setLoading(true); // Start loading
             setError(null); // Reset previous errors
             setPets([]); // Clear pets
+            setNewMatchPetIds(new Set());
             try {
                 const speciesID = speciesIdMap[selectedTab];
                 const response = await fetch(
@@ -348,6 +395,11 @@ function App() {
                     }
                 });
 
+                const previousStore = readNewMatchStorage();
+                const { newMatchIds, nextStore } = computeNewMatches(adoptableSearchList, previousStore);
+                setNewMatchPetIds(newMatchIds);
+                writeNewMatchStorage(nextStore);
+                setHasNewMatchHistory(Object.keys(nextStore).length > 0);
                 setPets(adoptableSearchList);
             } catch (err: unknown) {
                 console.error('Error fetching pets:', err);
@@ -366,6 +418,7 @@ function App() {
         if (selectedTab === 4) {
             petsTabRef.current = 4;
             setPets(favorites);
+            setNewMatchPetIds(new Set());
             setLoading(false);
         }
     }, [selectedTab, favorites]);
@@ -446,6 +499,12 @@ function App() {
         }
         return 0; // No sorting
     });
+
+    const isNewMatchPet = useCallback((pet: AdoptableSearch) => {
+        const petMatchKey = getPetMatchKey(pet);
+        return petMatchKey ? newMatchPetIds.has(petMatchKey) : false;
+    }, [newMatchPetIds]);
+    const newMatchCount = sortedPets.filter(isNewMatchPet).length;
 
     // Paginate the sorted pets
     const totalPages = Math.ceil(sortedPets.length / itemsPerPage);
@@ -570,6 +629,10 @@ function App() {
                     onHideSeenChange={setHideSeen}
                     hasActiveFilters={hasActiveFilters}
                     onClearFilters={handleClearFilters}
+                    newMatchCount={newMatchCount}
+                    hasNewMatchHistory={hasNewMatchHistory}
+                    onClearCurrentTabNewMatches={clearCurrentTabNewMatches}
+                    onClearAllNewMatches={clearAllNewMatches}
                 />
 
                 <PetList
@@ -583,6 +646,7 @@ function App() {
                     markAsSeen={markAsSeen}
                     markAllAsSeen={markAllAsSeen}
                     isSeen={isSeen}
+                    isNewMatch={isNewMatchPet}
                 />
 
                 <PaginationControls totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} />

@@ -5,6 +5,7 @@ import { Card, CardMedia, CardContent, Typography, CardActionArea, Chip, Box, Ic
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import NewReleasesIcon from '@mui/icons-material/NewReleases';
 import { AdoptableSearch } from '../types';
 import { getStageColor } from '../theme';
 interface PetCardProps {
@@ -15,9 +16,19 @@ interface PetCardProps {
     isSeenEnabled: boolean;
     onMarkAsSeen: () => void;
     isSeen: boolean;
+    isNewMatch: boolean;
 }
 
-const PetCard: React.FC<PetCardProps> = ({ pet, onClick, isFavorite, onToggleFavorite, isSeenEnabled, onMarkAsSeen, isSeen }) => {
+const PetCard: React.FC<PetCardProps> = ({
+    pet,
+    onClick,
+    isFavorite,
+    onToggleFavorite,
+    isSeenEnabled,
+    onMarkAsSeen,
+    isSeen,
+    isNewMatch,
+}) => {
 
     const formatAge = (age: number): string => {
         if (age < 12) {
@@ -87,6 +98,22 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick, isFavorite, onToggleFav
                         >
                             <VisibilityIcon />
                         </IconButton>
+                    )}
+
+                    {isNewMatch && (
+                        <Chip
+                            size="small"
+                            label="NEW"
+                            color="secondary"
+                            icon={<NewReleasesIcon fontSize="small" />}
+                            sx={{
+                                position: 'absolute',
+                                right: 8,
+                                top: 52,
+                                fontWeight: 800,
+                                zIndex: 10,
+                            }}
+                        />
                     )}
 
                     {pet.Stage && (

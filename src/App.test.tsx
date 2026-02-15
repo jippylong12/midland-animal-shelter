@@ -5,6 +5,7 @@ import { act } from 'react';
 import App from './App';
 import theme from './theme';
 import { buildDetailsXml, buildSearchXml, createPet, createPetDetails } from './test/fixtures';
+import { NEW_MATCH_STORAGE_KEY } from './utils/newMatchTracker';
 
 const toResponse = (body: string, status = 200): Response =>
     ({
@@ -84,6 +85,60 @@ describe('App', () => {
         expect(screen.getByRole('tab', { name: 'Dogs' })).toHaveAttribute('aria-selected', 'true');
         expect((screen.getByLabelText('Min age (yrs)') as HTMLInputElement).value).toBe('1');
         expect((screen.getByLabelText('Max age (yrs)') as HTMLInputElement).value).toBe('3');
+    });
+
+    it('highlights pets that are new since the last snapshot', async () => {
+        localStorage.setItem(
+            NEW_MATCH_STORAGE_KEY,
+            JSON.stringify({
+                dog: { ids: ['1'], updatedAt: 1_000 },
+            })
+        );
+
+        const dogs = [
+            createPet({ ID: 1, Name: 'Rex', Species: 'Dog' }),
+            createPet({ ID: 2, Name: 'Luna', Species: 'Dog' }),
+        ];
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(dogs)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+
+        await screen.findByText('Rex');
+        expect(screen.getAllByText('NEW')).toHaveLength(1);
+        expect(screen.getByText('Luna')).toBeInTheDocument();
+
+        const stored = JSON.parse(localStorage.getItem(NEW_MATCH_STORAGE_KEY) || '{}');
+        expect(stored.dog.ids.sort()).toEqual(['1', '2']);
+    });
+
+    it('clears new-match history for the current tab', async () => {
+        localStorage.setItem(
+            NEW_MATCH_STORAGE_KEY,
+            JSON.stringify({
+                dog: { ids: ['1'], updatedAt: 1_000 },
+            })
+        );
+
+        const dogs = [
+            createPet({ ID: 1, Name: 'Rex', Species: 'Dog' }),
+            createPet({ ID: 2, Name: 'Luna', Species: 'Dog' }),
+        ];
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(dogs)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+
+        await screen.findByText('Luna');
+        expect(screen.getAllByText('NEW')).toHaveLength(1);
+
+        await userEvent.click(screen.getByRole('button', { name: /clear new matches/i }));
+        await waitFor(() => {
+            expect(screen.queryByText('NEW')).not.toBeInTheDocument();
+        });
+
+        const stored = JSON.parse(localStorage.getItem(NEW_MATCH_STORAGE_KEY) || '{}');
+        expect(stored.dog.ids.sort()).toEqual(['1', '2']);
     });
 
     it('switches species tabs and requests the correct endpoint', async () => {

@@ -16,9 +16,22 @@ interface PetListProps {
     markAsSeen: (pet: AdoptableSearch) => void;
     markAllAsSeen: (pets: AdoptableSearch[]) => void;
     isSeen: (pet: AdoptableSearch) => boolean;
+    isNewMatch: (pet: AdoptableSearch) => boolean;
 }
 
-const PetList: React.FC<PetListProps> = ({ pets, loading, error, onPetClick, isFavorite, toggleFavorite, isSeenEnabled, markAsSeen, markAllAsSeen, isSeen }) => {
+const PetList: React.FC<PetListProps> = ({
+    pets,
+    loading,
+    error,
+    onPetClick,
+    isFavorite,
+    toggleFavorite,
+    isSeenEnabled,
+    markAsSeen,
+    markAllAsSeen,
+    isSeen,
+    isNewMatch,
+}) => {
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -82,6 +95,7 @@ const PetList: React.FC<PetListProps> = ({ pets, loading, error, onPetClick, isF
                             isSeenEnabled={isSeenEnabled}
                             onMarkAsSeen={() => markAsSeen(pet)}
                             isSeen={isSeen(pet)}
+                            isNewMatch={isNewMatch(pet)}
                         />
                     </Grid>
                 ))}
