@@ -1,31 +1,35 @@
-# Active Plan: Implement FTR-M04
+# Active Plan: Implement FTR-L01
 
 ## Status
 - Prepared.
-- Implement `FTR-M04` (Offline fallback for last successful list) with cached list/detail reads and stale indicators, plus full validation coverage.
+- Implement `FTR-L01` (Copy/share pet summary text) with a modal-first sharing flow, resilient clipboard behavior, and test coverage.
 
 ## Context
-- FTR-M04 in `docs/FEATURES_FUTURE.md` requires cache-based offline/read-only fallback for pet data and clear freshness cues.
-- Must remain frontend-only and keep the API contract unchanged.
-- Align with `.agent/project_context.md` constraints and preserve existing filters, pagination, favorites, seen history, compare, modal actions, and URL state.
+- `FTR-L01` in `docs/FEATURES_FUTURE.md` requests plain-text summary generation from existing pet fields and share/copy support.
+- Must remain frontend-only and avoid API contract changes.
+- Preserve existing core behaviors: tabs, filters, pagination, favorites, seen-history, compare, and modal flow.
 
 ## Constraints
-- Keep React + TypeScript + MUI only.
-- Preserve core behaviors: tabs, filters, pagination, favorites, seen, compare, URL state, and modal actions.
-- Keep persistence local-only (localStorage-backed) and no API contract changes.
-- Keep responsive behavior for mobile and desktop.
-- Continue honoring existing error handling and disclaimer/visibility patterns.
+- Keep React + TypeScript + MUI with existing theming; no alternate UI framework.
+- Keep core behaviors unchanged: URL state, tabs, filters, pagination, favorites/seen/compare, modal details.
+- No API schema changes; persist any new feature data client-side only.
+- Maintain mobile + desktop responsive quality.
+- Preserve accessibility and focus behavior patterns already established.
 
 ## Atomic Steps
-1. Create offline cache helpers in `src/utils` for list and detail payload snapshots with validation and expiry logic.
-   - Constraint mapping: local-only persistence and API contract stability.
-2. Extend `App.tsx` list loading flow to read cached snapshots on fetch failure and update banner state for stale/fallback mode.
-   - Constraint mapping: preserve existing tab/filter/pagination behavior.
-3. Extend `PetModal.tsx` detail fetching flow to read cached details when online fetch fails.
-   - Constraint mapping: read-only fallback should not mutate state unexpectedly.
-4. Update footer copy and state wiring to communicate fresh/stale and offline-read status clearly.
-   - Constraint mapping: clear trust signals, no new UI framework or color system.
-5. Add/extend tests in `src/App.test.tsx` and add new cache utility tests for cache read/write and fallback behavior.
-   - Constraint mapping: maintain Vitest + Testing Library + setup patterns.
-6. Update `docs/FEATURES_FUTURE.md` for `FTR-M04` status to `Shipped`, owner, target version, implemented date, and notes.
-7. Run `npm run test`, `npm run lint`, and `npm run build`, then report exact outcomes.
+1. Add a reusable plain-text summary generator for `AdoptableDetails` and utility-level formatting helpers (age, optional fields, stable copy body).
+   - Constraint mapping: keeps formatting centralized and avoids duplicating logic.
+2. Extend `PetModal` with a dedicated copy/share action in modal actions.
+   - Constraint mapping: keep user interaction within existing modal UX and avoid changing list flow.
+3. Implement resilient copy behavior in `PetModal`:
+   - Prefer `navigator.clipboard.writeText`.
+   - Graceful fallback to hidden textarea + `document.execCommand('copy')` when modern clipboard is unavailable.
+   - Surface success/error feedback with clear status text.
+4. Add focused UI/UX treatment (disabled state while loading, inline status chips/smaller typography, clear aria labels) consistent with current visual language.
+   - Constraint mapping: maintain accessibility and no icon-only ambiguity.
+5. Add test coverage for summary generation, copy success path, and fallback path in `src/App.test.tsx` (and utility test if extracted).
+   - Constraint mapping: use Vitest + RTL + localStorage/DOM setup patterns.
+6. Update `docs/FEATURES_FUTURE.md`:
+   - Set `FTR-L01` status to `Shipped` with owner/version/date and notes.
+   - Update progress snapshot totals.
+7. Run `npm run test`, `npm run lint`, and `npm run build` in order and report exact outcomes.

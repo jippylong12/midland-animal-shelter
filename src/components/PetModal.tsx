@@ -1,6 +1,6 @@
 // src/components/PetModal.tsx
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -11,6 +11,7 @@ import {
     AccordionDetails,
     Button,
     CircularProgress,
+    Alert,
     Typography,
     Link,
     Grid,
@@ -27,6 +28,7 @@ import StarBorderIcon from '@mui/icons-material/StarBorder';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { AdoptableDetails, AdoptableDetailsXmlNode, AdoptableSearch } from '../types';
 import { XMLParser } from 'fast-xml-parser';
@@ -37,6 +39,7 @@ import {
     AdoptionChecklistItemId,
 } from '../utils/adoptionChecklist';
 import { readCachedPetDetails, writeCachedPetDetails } from '../utils/offlineCache';
+import { buildPetSummaryText, formatPetAgeForSummary } from '../utils/petSummary';
 
 interface PetModalProps {
     isOpen: boolean;
@@ -64,6 +67,37 @@ interface PetModalProps {
 const parser = new XMLParser();
 const getErrorMessage = (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback;
+
+const copyTextToClipboard = async (text: string): Promise<void> => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return;
+        } catch (error: unknown) {
+            console.warn('Clipboard API write failed, falling back to legacy copy.', error);
+        }
+    }
+
+    const fallbackTextarea = document.createElement('textarea');
+    fallbackTextarea.value = text;
+    fallbackTextarea.setAttribute('readonly', 'true');
+    fallbackTextarea.style.position = 'fixed';
+    fallbackTextarea.style.left = '-9999px';
+    fallbackTextarea.style.opacity = '0';
+    document.body.appendChild(fallbackTextarea);
+
+    try {
+        fallbackTextarea.focus();
+        fallbackTextarea.select();
+        const didCopy = document.execCommand ? document.execCommand('copy') : false;
+
+        if (!didCopy) {
+            throw new Error('Unable to use clipboard API or fallback copy');
+        }
+    } finally {
+        document.body.removeChild(fallbackTextarea);
+    }
+};
 
 const InfoRow = ({ label, value, subValue }: { label: string, value?: string | number | null, subValue?: string | null }) => {
     if (!value) return null;
@@ -103,26 +137,59 @@ const PetModal: React.FC<PetModalProps> = ({
     const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
     const [isChecklistOpen, setIsChecklistOpen] = React.useState(false);
     const [isOfflineDetailMode, setIsOfflineDetailMode] = React.useState(false);
+    const [copyStatus, setCopyStatus] = React.useState<'idle' | 'success' | 'error'>('idle');
+    const [isCopyingSummary, setIsCopyingSummary] = React.useState(false);
 
     const titleId = 'pet-details-title';
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (modalData?.Photo1) {
             setSelectedImage(modalData.Photo1);
         }
     }, [modalData]);
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (!isOpen) {
             setIsOfflineDetailMode(false);
         }
 
         if (!isOpen) {
             setIsChecklistOpen(false);
+            setCopyStatus('idle');
         }
     }, [isOpen]);
 
-    useEffect(() => {
+    React.useEffect(() => {
+        if (copyStatus === 'idle') {
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            setCopyStatus('idle');
+        }, 2300);
+
+        return () => window.clearTimeout(timer);
+    }, [copyStatus]);
+
+    const handleCopySummary = async () => {
+        if (!modalData) {
+            return;
+        }
+
+        setIsCopyingSummary(true);
+        setCopyStatus('idle');
+        try {
+            await copyTextToClipboard(buildPetSummaryText(modalData));
+            setCopyStatus('success');
+        } catch (error: unknown) {
+            console.error('Error copying pet summary:', error);
+            setCopyStatus('error');
+        } finally {
+            setIsCopyingSummary(false);
+        }
+    };
+
+    React.useEffect(() => {
         const fetchPetDetails = async () => {
             if (animalID === null) return;
 
@@ -163,15 +230,6 @@ const PetModal: React.FC<PetModalProps> = ({
         }
     }, [isOpen, animalID, setModalData, setModalError, setModalLoading]);
 
-    const formatAge = (age: number): string => {
-        if (age < 12) {
-            return `${age} Month${age !== 1 ? 's' : ''}`;
-        }
-        const years = Math.floor(age / 12);
-        const months = age % 12;
-        return `${years} Year${years !== 1 ? 's' : ''}${months > 0 ? ` and ${months} Month${months !== 1 ? 's' : ''}` : ''}`;
-    };
-
     const petFromModal = modalData ? {
         ...modalData,
         Name: modalData.AnimalName,
@@ -192,19 +250,24 @@ const PetModal: React.FC<PetModalProps> = ({
             <DialogTitle
                 sx={{
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                    flexDirection: 'column',
+                    gap: 1,
                     background: 'linear-gradient(110deg, rgba(230, 244, 227, 0.95) 0%, rgba(255, 247, 230, 0.95) 100%)',
                     borderBottom: '1px solid rgba(26, 42, 29, 0.1)',
+                    alignItems: 'stretch',
                 }}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography id={titleId} variant="h5" component="div" fontWeight="bold">
+                    <Typography id={titleId} variant="h5" component="div" fontWeight="bold" sx={{ flexGrow: 1 }}>
                         {modalData ? modalData.AnimalName : 'Pet Details'}
                     </Typography>
                     {modalData && (
                         <IconButton
-                            onClick={() => petFromModal && onToggleCompare(petFromModal)}
+                            onClick={() => {
+                                if (petFromModal) {
+                                    onToggleCompare(petFromModal);
+                                }
+                            }}
                             disabled={Boolean(petFromModal) && !isInCompare && !canAddCompare}
                             aria-label={petFromModal ? `${isInCompare ? 'Remove' : 'Add'} ${petFromModal.Name} from compare` : 'Compare this pet'}
                             sx={{
@@ -259,16 +322,34 @@ const PetModal: React.FC<PetModalProps> = ({
                             <VisibilityIcon />
                         </IconButton>
                     )}
+                    <Button
+                        onClick={handleCopySummary}
+                        size="small"
+                        variant="outlined"
+                        startIcon={<ContentCopyIcon />}
+                        disabled={!modalData || isCopyingSummary}
+                        aria-label={modalData ? `Copy ${modalData.AnimalName} summary` : 'Copy pet summary'}
+                    >
+                        {isCopyingSummary ? 'Copying…' : 'Copy summary'}
+                    </Button>
+                    <Button
+                        onClick={onClose}
+                        color="inherit"
+                        variant="outlined"
+                        aria-label="Close pet details"
+                        autoFocus
+                    >
+                        Close
+                    </Button>
                 </Box>
-                <Button
-                    onClick={onClose}
-                    color="inherit"
-                    variant="outlined"
-                    aria-label="Close pet details"
-                    autoFocus
-                >
-                    Close
-                </Button>
+
+                {copyStatus !== 'idle' ? (
+                    <Alert severity={copyStatus === 'success' ? 'success' : 'error'} variant="outlined" sx={{ mt: 0.3 }}>
+                        {copyStatus === 'success'
+                            ? 'Pet summary copied to clipboard. Paste into text, email, or notes to share.'
+                            : 'Unable to copy summary automatically. Select and copy the text manually.'}
+                    </Alert>
+                ) : null}
             </DialogTitle>
             <DialogContent dividers>
                 {isOfflineDetailMode ? (
@@ -354,7 +435,7 @@ const PetModal: React.FC<PetModalProps> = ({
                                         }}
                                         size="small"
                                     />
-                                    <Chip label={formatAge(modalData.Age)} size="small" />
+                                    <Chip label={formatPetAgeForSummary(modalData.Age)} size="small" />
                                     <Chip label={modalData.Location} variant="outlined" size="small" />
                                     <Chip
                                         label={modalData.Stage}

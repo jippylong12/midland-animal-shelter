@@ -435,6 +435,141 @@ describe('App', () => {
         expect(await screen.findByRole('link', { name: /adopt ranger/i })).toBeInTheDocument();
     });
 
+    it('copies a generated pet summary to clipboard from the modal', async () => {
+        const searchXml = buildSearchXml([
+            createPet({ ID: 77, Name: 'Ranger', Species: 'Dog', PrimaryBreed: 'Shepherd' }),
+        ]);
+        const detailsXml = buildDetailsXml(
+            createPetDetails({
+                ID: 77,
+                AnimalName: 'Ranger',
+                Species: 'Dog',
+                PrimaryBreed: 'Shepherd',
+                Stage: 'Available',
+                AdoptionApplicationUrl: 'https://example.com/adopt/ranger',
+            })
+        );
+
+        const writeTextMock = vi.fn().mockResolvedValue(undefined);
+        const navigatorLike = navigator as unknown as { clipboard?: { writeText: (text: string) => Promise<void> } };
+        const originalClipboard = navigatorLike.clipboard;
+        navigatorLike.clipboard = { writeText: writeTextMock };
+
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(toResponse(searchXml))
+            .mockResolvedValueOnce(toResponse(detailsXml));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Ranger');
+
+        await userEvent.click(screen.getByText('Ranger'));
+        const modal = await screen.findByRole('dialog');
+        expect(within(modal).getByRole('link', { name: /adopt ranger/i })).toBeInTheDocument();
+        const copyButton = await within(modal).findByRole('button', { name: /copy .*summary/i });
+        await userEvent.click(copyButton);
+
+        expect(writeTextMock).toHaveBeenCalledTimes(1);
+        expect(writeTextMock).toHaveBeenCalledWith(expect.stringContaining('Pet Name: Ranger'));
+        expect(await screen.findByText(/pet summary copied to clipboard/i)).toBeInTheDocument();
+
+        navigatorLike.clipboard = originalClipboard;
+    });
+
+    it('falls back to document.execCommand when clipboard API is not available', async () => {
+        const searchXml = buildSearchXml([
+            createPet({ ID: 77, Name: 'Ranger', Species: 'Dog', PrimaryBreed: 'Shepherd' }),
+        ]);
+        const detailsXml = buildDetailsXml(
+            createPetDetails({
+                ID: 77,
+                AnimalName: 'Ranger',
+                Species: 'Dog',
+                PrimaryBreed: 'Shepherd',
+                Stage: 'Available',
+            })
+        );
+
+        const navigatorLike = navigator as unknown as { clipboard?: { writeText?: (text: string) => Promise<void> } };
+        const originalClipboard = navigatorLike.clipboard;
+        navigatorLike.clipboard = undefined;
+        const documentWithExec = document as unknown as {
+            execCommand?: (command: string) => boolean;
+        };
+        const originalExecCommand = documentWithExec.execCommand;
+        const execCommandSpy = vi.fn().mockReturnValue(true);
+        documentWithExec.execCommand = execCommandSpy;
+
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(toResponse(searchXml))
+            .mockResolvedValueOnce(toResponse(detailsXml));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Ranger');
+
+        await userEvent.click(screen.getByText('Ranger'));
+        const modal = await screen.findByRole('dialog');
+        expect(within(modal).getByRole('button', { name: /close pet details/i })).toBeInTheDocument();
+        const copyButton = await within(modal).findByRole('button', { name: /copy .*summary/i });
+        await userEvent.click(copyButton);
+
+        expect(execCommandSpy).toHaveBeenCalledWith('copy');
+        expect(await screen.findByText(/pet summary copied to clipboard/i)).toBeInTheDocument();
+
+        documentWithExec.execCommand = originalExecCommand;
+        navigatorLike.clipboard = originalClipboard;
+    });
+
+    it('shows a fallback error when neither clipboard path can copy', async () => {
+        const searchXml = buildSearchXml([
+            createPet({ ID: 77, Name: 'Ranger', Species: 'Dog', PrimaryBreed: 'Shepherd' }),
+        ]);
+        const detailsXml = buildDetailsXml(
+            createPetDetails({
+                ID: 77,
+                AnimalName: 'Ranger',
+                Species: 'Dog',
+                PrimaryBreed: 'Shepherd',
+                Stage: 'Available',
+            })
+        );
+
+        const navigatorLike = navigator as unknown as {
+            clipboard?: { writeText?: (text: string) => Promise<void> };
+        };
+        const originalClipboard = navigatorLike.clipboard;
+        navigatorLike.clipboard = undefined;
+        const documentWithExec = document as unknown as {
+            execCommand?: (command: string) => boolean;
+        };
+        const originalExecCommand = documentWithExec.execCommand;
+        const execCommandSpy = vi.fn().mockReturnValue(false);
+        documentWithExec.execCommand = execCommandSpy;
+
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(toResponse(searchXml))
+            .mockResolvedValueOnce(toResponse(detailsXml));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Ranger');
+
+        await userEvent.click(screen.getByText('Ranger'));
+        const modal = await screen.findByRole('dialog');
+        const copyButton = await within(modal).findByRole('button', { name: /copy .*summary/i });
+        await userEvent.click(copyButton);
+
+        expect(execCommandSpy).toHaveBeenCalledWith('copy');
+        expect(await screen.findByText(/unable to copy summary automatically/i)).toBeInTheDocument();
+
+        documentWithExec.execCommand = originalExecCommand;
+        navigatorLike.clipboard = originalClipboard;
+    });
+
     it('labels icon-only card and modal controls for screen readers', async () => {
         localStorage.setItem('shelter_favorites_disclaimer', 'true');
         localStorage.setItem('seenPetsEnabled', JSON.stringify(true));

@@ -19,6 +19,7 @@
 - Reuse modal props as a transport for persisted, per-entity UI state (for example, checklist and notes in the details modal) rather than adding global modal-local mutation logic.
 - Preserve keyboard and screen-reader accessibility state when opening/closing modals by capturing the active trigger and restoring focus deterministically after close.
 - Require explicit accessible labels for icon-only controls (`aria-label`) and add consistent focus-visible cues before shipping accessibility-focused UI upgrades.
+- Centralize modal share text generation in a utility (`src/utils/petSummary.ts`) and keep clipboard interaction in `PetModal` as a fallback-first flow (Clipboard API → legacy `execCommand`), returning explicit success/error messages.
 
 ## Gotchas
 - After adding new `@mui/icons-material` imports during dev, Vite may need a restart to avoid stale optimized dependency warnings/errors.
@@ -35,3 +36,6 @@
 - **Topic:** Pet-local state persistence
   - **Rule:** Store mutable per-entity UI states (e.g., checklist, notes) in `localStorage` by numeric entity ID with strict normalization on read/write.
   - **Reason:** This prevents malformed payloads from polluting runtime state and lets modal state survive tab/popup reopen while keeping UI logic localized.
+- **Topic:** Clipboard sharing resilience
+  - **Rule:** Keep copy/share text generation in `src/utils/petSummary.ts`, and in `PetModal` attempt `navigator.clipboard.writeText` first, then fallback to `document.execCommand('copy')` with an explicit user-facing error state when both paths fail.
+  - **Reason:** This preserves a dependable share flow in modern browsers and older/jsdom-like contexts, with consistent copy success/failure messaging.
