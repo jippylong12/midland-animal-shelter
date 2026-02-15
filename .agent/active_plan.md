@@ -1,5 +1,6 @@
 ## Status
 - Completed.
+- Follow-up completed: moved data freshness UI from inline alert to compact footer presentation for reduced prominence.
 
 # Active Plan: Implement FTR-H04 (Data freshness and stale-data banner)
 

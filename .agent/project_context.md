@@ -45,3 +45,7 @@
 - **Topic:** Data freshness without API contract changes
 - **Rule:** Persist last-successful sync timestamps in localStorage per tab (tab index keys) and display fresh/stale banners derived from those values.
 - **Reason:** This keeps API contracts untouched while surfacing trust signals for delayed/stale list data.
+
+- **Topic:** Non-critical trust signals in footer
+- **Rule:** When existing trust indicators become visually noisy, render them in compact footer caption form and hide them on non-listing contexts (e.g., favorites tab), while preserving wording and stale detection semantics.
+- **Reason:** This preserves important user trust context without destabilizing the primary browsing flow or changing data/state logic.
