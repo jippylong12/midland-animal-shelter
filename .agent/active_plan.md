@@ -1,27 +1,24 @@
 ## Status
-- Completed.
-- Implemented `FTR-M01` (saved search presets) end-to-end with localStorage persistence and preset controls.
+- In progress.
+- Refactor `src/components/Filters.tsx` to reduce layout complexity with a compact default view and expandable advanced controls.
 
-# Active Plan: Implement FTR-M01 (Saved search presets)
+# Active Plan: Refactor Filters UI Density
 
 ## Context
-- Implement `FTR-M01` from `docs/FEATURES_FUTURE.md`: allow users to store and reapply common search/filter states with one-click preset actions.
+- User asked to make `Filters.tsx` less large/ungainly and suggested a compact + advanced approach.
 
 ## Constraints
 - Keep React + TypeScript + MUI only.
-- Preserve current core behavior: API fetch, tabs, filters, pagination, favorites, seen history, modal details, and disclaimer.
-- Maintain mobile/desktop responsiveness and existing tab/filter/query-state patterns.
-- Use SPA-only client persistence (`localStorage`) and no backend/API contract changes.
-- Validate with `npm run lint`, `npm run build`, and targeted test suite(s).
+- Preserve existing core behaviors: filter operations, preset save/apply/delete, seen-history disclaimer flow, and clear actions.
+- Maintain mobile/desktop responsiveness.
+- Avoid API contract or parent prop changes for this UI-only refactor.
 
 ## Atomic Steps
-1. Add `src/utils/searchPresets.ts` with localStorage read/write, schema normalization, and lightweight validation.
-   - Constraint mapping: no API contract changes and resilient handling of malformed storage payloads.
-2. Add preset save/apply/delete event handlers to `src/App.tsx` while reusing existing filter state shape.
-   - Constraint mapping: keep current tabs, filters, and list rendering state in `App` as the source of truth.
-3. Extend `src/components/Filters.tsx` to surface preset controls (save, apply, delete) with clear labels and affordances.
-   - Constraint mapping: preserve existing MUI layout patterns and accessibility for existing controls.
-4. Add utility tests (`src/utils/searchPresets.test.ts`) and App-level integration tests for preset behavior.
-   - Constraint mapping: align with existing Vitest + RTL patterns.
-5. Update `docs/FEATURES_FUTURE.md` to mark `FTR-M01` as shipped and refresh progress metrics.
-6. Run `npm run lint`, `npm run test`, and `npm run build`.
+1. Identify high-frequency controls for a compact default section.
+- Constraint mapping: keep current filters functional and easy to access on mobile and desktop.
+2. Move lower-frequency controls/actions into an expandable advanced section (`Collapse`) controlled within `Filters.tsx`.
+- Constraint mapping: preserve behavior and callback wiring without changing `FiltersProps`.
+3. Keep preset and seen-history behaviors intact while reorganizing JSX into clearer grouped sections.
+- Constraint mapping: do not remove consent/disclaimer messaging or existing local feature semantics.
+4. Ensure labels, button text, and section headers make the compact/advanced split discoverable.
+- Constraint mapping: preserve accessibility and current MUI interaction patterns.

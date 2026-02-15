@@ -54,3 +54,7 @@
 - **Topic:** Non-critical trust signals in footer
 - **Rule:** When existing trust indicators become visually noisy, render them in compact footer caption form and hide them on non-listing contexts (e.g., favorites tab), while preserving wording and stale detection semantics.
 - **Reason:** This preserves important user trust context without destabilizing the primary browsing flow or changing data/state logic.
+
+- **Topic:** Filter panel scalability
+- **Rule:** Keep `src/components/Filters.tsx` compact by default and place lower-frequency controls (sorting, age bounds, presets, and history utilities) in an explicit advanced section while keeping the same prop/callback contract.
+- **Reason:** This reduces cognitive load and component sprawl without changing fetch/filter behavior or parent state flow.

@@ -13,6 +13,7 @@
 - Track successful list sync timestamps by tab index in localStorage to support freshness and staleness messaging without API contract changes.
 - For non-critical trust signals, prefer pushing informational copy to `Footer` instead of inline page alerts when the requirement is to reduce visual prominence.
 - For local-only feature persistence, keep parsing/writing in dedicated utility modules that normalize payloads before state hydration (favorites, seen history, and now search presets).
+- Keep `Filters` compact-by-default and gate lower-frequency controls behind an explicit advanced section to reduce visual density without changing callback/state contracts.
 
 ## Gotchas
 - After adding new `@mui/icons-material` imports during dev, Vite may need a restart to avoid stale optimized dependency warnings/errors.
