@@ -77,9 +77,19 @@ import {
 } from './utils/personalFitScoring';
 import { createEmptyAdoptionChecklist } from './utils/adoptionChecklist';
 import { readCachedPetList, writeCachedPetList } from './utils/offlineCache';
+import {
+    buildLocalAppStateExport,
+    parseLocalAppStateImport,
+} from './utils/localAppState';
 
 const parser = new XMLParser();
 type AppTabKind = 'fetch' | 'favorites' | 'settings';
+type TransferStateSeverity = 'success' | 'error' | 'info' | 'warning';
+
+type StateTransferStatus = {
+    severity: TransferStateSeverity;
+    message: string;
+};
 type AppTabConfig = {
     label: string;
     icon: JSX.Element;
@@ -134,6 +144,47 @@ const getTabSpeciesLabel = (selectedTab: number): string | null => {
 
 const getTabKind = (selectedTab: number): AppTabKind | null => {
     return APP_TAB_CONFIG[selectedTab]?.kind ?? null;
+};
+
+const readUploadedFileText = async (file: Blob): Promise<string> => {
+    if (typeof file.text === 'function') {
+        return file.text();
+    }
+
+    if (typeof file.arrayBuffer === 'function') {
+        const encoded = await file.arrayBuffer();
+        const decoder = new TextDecoder();
+        return decoder.decode(encoded);
+    }
+
+    if (typeof FileReader !== 'function') {
+        throw new Error('Unable to read selected file.');
+    }
+
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            if (typeof reader.result === 'string') {
+                resolve(reader.result);
+                return;
+            }
+
+            if (reader.result instanceof ArrayBuffer) {
+                const decoder = new TextDecoder();
+                resolve(decoder.decode(reader.result));
+                return;
+            }
+
+            reject(new Error('Unable to read selected file.'));
+        };
+
+        reader.onerror = () => {
+            reject(new Error('Unable to read selected file.'));
+        };
+
+        reader.readAsText(file);
+    });
 };
 
 type AppUrlState = {
@@ -273,6 +324,7 @@ function App() {
     const [isOfflineListMode, setIsOfflineListMode] = useState<boolean>(false);
 
     const [searchPresets, setSearchPresets] = useState<SearchPreset[]>(() => readSearchPresets());
+    const [stateTransferStatus, setStateTransferStatus] = useState<StateTransferStatus | null>(null);
 
     // State for Modal
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -293,11 +345,37 @@ function App() {
     const lastModalTriggerRef = useRef<HTMLElement | null>(null);
 
     // Favorites Hook
-    const { favorites, toggleFavorite, isFavorite, isDisclaimerOpen, acceptDisclaimer, closeDisclaimer, checkAvailability } = useFavorites();
+    const {
+        favorites,
+        toggleFavorite,
+        isFavorite,
+        isDisclaimerOpen,
+        acceptDisclaimer,
+        closeDisclaimer,
+        checkAvailability,
+        isDisclaimerAccepted,
+        replaceFavorites,
+        setDisclaimerAcceptance,
+    } = useFavorites();
 
     // Seen Pets Hook
-    const { seenPets, isSeenEnabled, toggleSeenFeature, markAsSeen, markAllAsSeen, isSeen } = useSeenPets();
-    const { getChecklistForPet, setChecklistItem, setChecklistNotes } = useAdoptionChecklist();
+    const {
+        seenPets,
+        isSeenEnabled,
+        toggleSeenFeature,
+        markAsSeen,
+        markAllAsSeen,
+        isSeen,
+        replaceSeenState,
+        setSeenEnabled,
+    } = useSeenPets();
+    const {
+        getChecklistForPet,
+        setChecklistItem,
+        setChecklistNotes,
+        replaceChecklistStore,
+        checklists: adoptionChecklistStore,
+    } = useAdoptionChecklist();
 
     const isCompareLimitReached = comparePets.length >= MAX_COMPARE_PETS;
     const isInCompare = useCallback((pet: AdoptableSearch) => {
@@ -511,6 +589,81 @@ function App() {
         setHasNewMatchHistory(false);
         setNewMatchPetIds(new Set());
     }, []);
+
+    const resetStateTransferStatus = () => {
+        setStateTransferStatus(null);
+    };
+
+    const handleExportLocalAppState = () => {
+        try {
+            const exportPayload = buildLocalAppStateExport({
+                favorites,
+                seenPets,
+                seenEnabled: isSeenEnabled,
+                favoritesDisclaimerAccepted: isDisclaimerAccepted,
+                searchPresets,
+                adoptionChecklists: adoptionChecklistStore,
+            });
+            const dateLabel = new Date().toISOString().slice(0, 10);
+            const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+                type: 'application/json',
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.download = `midland-animal-shelter-local-state-${dateLabel}.json`;
+            link.setAttribute('rel', 'noopener');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            setStateTransferStatus({
+                severity: 'success',
+                message: `Export complete: ${favorites.length} favorites, ${seenPets.length} seen pets, ${searchPresets.length} presets, and ${Object.keys(adoptionChecklistStore).length} checklist entries exported.`,
+            });
+        } catch {
+            setStateTransferStatus({
+                severity: 'error',
+                message: 'Unable to export local app state. Please try again.',
+            });
+        }
+    };
+
+    const handleImportLocalAppState = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0] ?? null;
+
+        try {
+            if (!file) {
+                return;
+            }
+
+            const rawText = await readUploadedFileText(file);
+            const parsedState = parseLocalAppStateImport(rawText);
+
+            replaceFavorites(parsedState.favorites);
+            replaceSeenState(parsedState.seenPets);
+            setSeenEnabled(parsedState.seenEnabled);
+            setDisclaimerAcceptance(parsedState.favoritesDisclaimerAccepted);
+            setSearchPresets(parsedState.searchPresets);
+            writeSearchPresets(parsedState.searchPresets);
+            replaceChecklistStore(parsedState.adoptionChecklists);
+
+            setStateTransferStatus({
+                severity: 'success',
+                message: `Import complete: ${parsedState.favorites.length} favorites, ${parsedState.seenPets.length} seen pets, ${parsedState.searchPresets.length} presets, and ${Object.keys(parsedState.adoptionChecklists).length} checklist entries imported.`,
+            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to import local app state file.';
+            setStateTransferStatus({
+                severity: 'error',
+                message,
+            });
+        } finally {
+            event.target.value = '';
+        }
+    };
 
     // Handle Page Change
     const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
@@ -971,6 +1124,10 @@ function App() {
                         onClearAllNewMatches={clearAllNewMatches}
                         hasNewMatchHistory={hasNewMatchHistory}
                         newMatchCount={settingsNewMatchCount}
+                        onExportLocalAppState={handleExportLocalAppState}
+                        onImportLocalAppState={handleImportLocalAppState}
+                        transferState={stateTransferStatus}
+                        onClearTransferState={resetStateTransferStatus}
                     />
                 ) : (
                     <Filters

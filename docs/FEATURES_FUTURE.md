@@ -7,11 +7,11 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 | Metric | Value |
 |---|---:|
 | Total backlog items | 12 |
-| Backlog | 3 |
+| Backlog | 2 |
 | Planned | 0 |
 | In Progress | 0 |
 | Blocked | 0 |
-| Shipped | 9 |
+| Shipped | 10 |
 | Dropped | 0 |
 
 ## High
@@ -38,15 +38,12 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 |---|---|---|---|---|---|---|---|
 | FTR-L01 | Copy/share pet summary text | Makes it easier for families to discuss candidates over text/email without screenshotting. | Shipped | Engineering | v1.14 | 2026-02-15 | Generates plain-text summary from existing fields and supports modal clipboard copy with fallback feedback messaging. |
 | FTR-L02 | Personal fit scoring sliders (local preference model) | Adds lightweight decision support by ranking pets against user-set priorities. | Shipped | Engineering | v1.14 | 2026-02-15 | Moved fit controls into the new Settings tab, added opt-in toggle, clearer age slider direction (0=younger, 100=older), and explicit source/ownership copy. |
-| FTR-L03 | Export/import local app state | Lets users move favorites, seen history, presets, and notes between browsers manually. | Backlog | Unassigned | v1.15 |  | JSON export/import with validation; no cloud sync. |
+| FTR-L03 | Export/import local app state | Lets users move favorites, seen history, presets, and notes between browsers manually. | Shipped | Engineering | v1.15 | 2026-02-15 | JSON export/import with validation and an in-app restore flow. |
 | FTR-L04 | Compact card view toggle | Helps power users scan more pets per page on desktop while keeping the current default layout. | Backlog | Unassigned | v1.15 |  | UI-density switch stored locally; preserve responsive rules. |
 
 ## Top 3 next items
 
-1. **FTR-L03 Export/import local app state**
-   - Dependency: define stable import/export schema and error handling for malformed data.
-   - Risk: accidental state loss due to schema mismatch.
-2. **FTR-L04 Compact card view toggle**
+1. **FTR-L04 Compact card view toggle**
    - Dependency: agree on breakpoints and density controls for mobile vs desktop.
    - Risk: compressed layout reducing card scan readability.
 3. No additional ranked medium-priority candidates currently.

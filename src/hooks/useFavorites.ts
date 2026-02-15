@@ -1,102 +1,165 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AdoptableSearch } from '../types';
+import { normalizeCachedPet } from '../utils/offlineCache';
 
-const STORAGE_KEY = 'shelter_favorites';
-const DISCLAIMER_KEY = 'shelter_favorites_disclaimer';
-const EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+export const FAVORITES_STORAGE_KEY = 'shelter_favorites';
+export const FAVORITES_DISCLAIMER_KEY = 'shelter_favorites_disclaimer';
+export const FAVORITES_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export interface FavoriteItem extends AdoptableSearch {
     savedAt: number;
 }
 
+type UnknownRecord = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is UnknownRecord =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const parseNumber = (value: unknown, fallback: number): number => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+    }
+
+    if (typeof value === 'string' && value.trim() !== '') {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed)) return parsed;
+    }
+
+    return fallback;
+};
+
+const normalizeFavorite = (value: unknown, fallbackSavedAt: number): FavoriteItem | null => {
+    const normalizedPet = normalizeCachedPet(value);
+    if (!normalizedPet || !isRecord(value)) {
+        return null;
+    }
+
+    return {
+        ...normalizedPet,
+        savedAt: parseNumber(value.savedAt, fallbackSavedAt),
+    };
+};
+
+const readFavoritesFromStorage = (): FavoriteItem[] => {
+    const now = Date.now();
+    try {
+        const storedFavorites = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        if (!storedFavorites) return [];
+
+        const parsed = JSON.parse(storedFavorites);
+        if (!Array.isArray(parsed)) {
+            return [];
+        }
+
+        return parsed
+            .map((item) => normalizeFavorite(item, now))
+            .filter((item): item is FavoriteItem => Boolean(item))
+            .filter((item) => now - item.savedAt < FAVORITES_EXPIRATION_MS)
+            .map((item) => ({
+                ...item,
+                savedAt: now,
+            }));
+    } catch (error) {
+        console.error('LocalStorage not supported or error parsing', error);
+        return [];
+    }
+};
+
+const sanitizeFavoriteList = (favorites: FavoriteItem[]): FavoriteItem[] => {
+    const now = Date.now();
+
+    return favorites
+        .map((item) => normalizeFavorite(item, now))
+        .filter((item): item is FavoriteItem => Boolean(item))
+        .filter((item) => now - item.savedAt < FAVORITES_EXPIRATION_MS);
+};
+
+export const writeFavoriteItems = (favorites: FavoriteItem[]) => {
+    try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites));
+    } catch (e) {
+        console.error('Error saving to localStorage', e);
+    }
+};
+
+const writeDisclaimerAccepted = (accepted: boolean) => {
+    try {
+        if (accepted) {
+            localStorage.setItem(FAVORITES_DISCLAIMER_KEY, 'true');
+            return;
+        }
+
+        localStorage.removeItem(FAVORITES_DISCLAIMER_KEY);
+    } catch (e) {
+        console.error('Error saving disclaimer status', e);
+    }
+};
+
 export const useFavorites = () => {
-    const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+    const [favorites, setFavorites] = useState<FavoriteItem[]>(() => readFavoritesFromStorage());
     const [disclaimerAccepted, setDisclaimerAccepted] = useState<boolean>(false);
     const [isDisclaimerOpen, setIsDisclaimerOpen] = useState<boolean>(false);
     const [pendingFavorite, setPendingFavorite] = useState<AdoptableSearch | null>(null);
 
-    // Load from localStorage on mount
+    // Load disclaimer acceptance from localStorage
     useEffect(() => {
         try {
-            const storedDisclaimer = localStorage.getItem(DISCLAIMER_KEY);
-            if (storedDisclaimer === 'true') {
-                setDisclaimerAccepted(true);
-            }
-
-            const storedFavorites = localStorage.getItem(STORAGE_KEY);
-            if (storedFavorites) {
-                const parsed: FavoriteItem[] = JSON.parse(storedFavorites);
-                const now = Date.now();
-
-                // Filter out expired items and renew valid ones
-                const validFavorites = parsed.filter(item => {
-                    return (now - item.savedAt) < EXPIRATION_MS;
-                }).map(item => ({
-                    ...item,
-                    savedAt: now // Renew timestamp
-                }));
-
-                setFavorites(validFavorites);
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(validFavorites));
-            }
-        } catch (e) {
-            console.error('LocalStorage not supported or error parsing', e);
+            const storedDisclaimer = localStorage.getItem(FAVORITES_DISCLAIMER_KEY);
+            setDisclaimerAccepted(storedDisclaimer === 'true');
+        } catch (error) {
+            console.error('LocalStorage not supported or error parsing', error);
         }
     }, []);
 
     const saveFavorites = (newFavorites: FavoriteItem[]) => {
-        setFavorites(newFavorites);
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newFavorites));
-        } catch (e) {
-            console.error('Error saving to localStorage', e);
-        }
+        const normalized = sanitizeFavoriteList(newFavorites);
+        setFavorites(normalized);
+        writeFavoriteItems(normalized);
+        return normalized;
     };
 
     const addFavorite = useCallback((pet: AdoptableSearch) => {
+        const now = Date.now();
+
         setFavorites(prev => {
             if (prev.some(f => f.ID === pet.ID)) return prev;
-            const newFavs = [...prev, { ...pet, savedAt: Date.now() }];
-            saveFavorites(newFavs);
-            return newFavs;
+            const newFavs = [...prev, { ...pet, savedAt: now }];
+            return saveFavorites(newFavs);
         });
     }, []);
 
     const removeFavorite = useCallback((petID: number) => {
-        setFavorites(prev => {
-            const newFavs = prev.filter(f => f.ID !== petID);
-            saveFavorites(newFavs);
-            return newFavs;
+        setFavorites((prev) => {
+            const newFavs = prev.filter((f) => f.ID !== petID);
+            return saveFavorites(newFavs);
         });
     }, []);
 
     const toggleFavorite = useCallback((pet: AdoptableSearch) => {
-        const isFav = favorites.some(f => f.ID === pet.ID);
+        const isFav = favorites.some((f) => f.ID === pet.ID);
         if (isFav) {
             removeFavorite(pet.ID);
-        } else {
-            if (!disclaimerAccepted) {
-                setPendingFavorite(pet);
-                setIsDisclaimerOpen(true);
-            } else {
-                addFavorite(pet);
-            }
+            return;
         }
-    }, [favorites, disclaimerAccepted, addFavorite, removeFavorite]);
+
+        if (!disclaimerAccepted) {
+            setPendingFavorite(pet);
+            setIsDisclaimerOpen(true);
+            return;
+        }
+
+        addFavorite(pet);
+    }, [addFavorite, disclaimerAccepted, favorites, removeFavorite]);
 
     const acceptDisclaimer = useCallback(() => {
         setDisclaimerAccepted(true);
+        writeDisclaimerAccepted(true);
         setIsDisclaimerOpen(false);
-        try {
-            localStorage.setItem(DISCLAIMER_KEY, 'true');
-        } catch (e) {
-            console.error('Error saving disclaimer status', e);
-        }
         if (pendingFavorite) {
             addFavorite(pendingFavorite);
             setPendingFavorite(null);
         }
-    }, [pendingFavorite, addFavorite]);
+    }, [addFavorite, pendingFavorite]);
 
     const closeDisclaimer = useCallback(() => {
         setIsDisclaimerOpen(false);
@@ -104,37 +167,39 @@ export const useFavorites = () => {
     }, []);
 
     const isFavorite = useCallback((petID: number) => {
-        return favorites.some(f => f.ID === petID);
+        return favorites.some((f) => f.ID === petID);
     }, [favorites]);
 
+    const replaceFavorites = useCallback((nextFavorites: FavoriteItem[]) => {
+        setFavorites(() => saveFavorites(nextFavorites));
+    }, []);
+
+    const setDisclaimerAcceptance = useCallback((next: boolean) => {
+        setDisclaimerAccepted(next);
+        writeDisclaimerAccepted(next);
+    }, []);
+
     // Availability Check
-    // We only check against the current list of pets. 
-    // If a favorite matches the species of the current list but is NOT in the list, it's removed.
+    // We only check against the current list of pets.
+    // If a favorite matches the species of the current view and is no longer present, remove it.
     const checkAvailability = useCallback((currentPets: AdoptableSearch[], currentSpecies: string) => {
         if (!currentPets || currentPets.length === 0) return;
 
         setFavorites(prev => {
             const newFavs = prev.filter(fav => {
-                // If the favorite is of the same species as the current view
-                // AND it is NOT in the current list, assume it's gone.
-                // Note: This assumes 'currentPets' is the COMPLETE list for that species, not just a page.
-                // App.tsx fetches all pets for a species, then paginates locally. So this is safe.
-                if (fav.Species === currentSpecies || (currentSpecies === 'All Pets' && true)) { // 'All Pets' might be tricky if not all are fetched
-                    // Wait, App.tsx fetches by speciesID. 
-                    // If currentSpecies is 'Dog', we check if fav (Dog) is in currentPets.
-                    if (fav.Species === currentSpecies) {
-                        const stillExists = currentPets.some(p => p.ID === fav.ID);
-                        return stillExists;
-                    }
+                if (fav.Species === currentSpecies) {
+                    const stillExists = currentPets.some((p) => p.ID === fav.ID);
+                    return stillExists;
                 }
-                return true; // Keep others
+
+                return true;
             });
 
             if (newFavs.length !== prev.length) {
-                saveFavorites(newFavs);
-                return newFavs;
+                return saveFavorites(newFavs);
             }
-            return prev; // Return previous state if no changes to avoid re-render
+
+            return prev;
         });
     }, []);
 
@@ -145,6 +210,9 @@ export const useFavorites = () => {
         isDisclaimerOpen,
         acceptDisclaimer,
         closeDisclaimer,
-        checkAvailability
+        checkAvailability,
+        isDisclaimerAccepted: disclaimerAccepted,
+        replaceFavorites,
+        setDisclaimerAcceptance,
     };
 };

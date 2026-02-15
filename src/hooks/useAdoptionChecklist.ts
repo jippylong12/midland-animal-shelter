@@ -4,6 +4,7 @@ import {
     AdoptionChecklistItemId,
     createEmptyAdoptionChecklist,
     MAX_ADOPTION_NOTES_CHARACTERS,
+    normalizeAdoptionChecklistStore,
     readAdoptionChecklistStore,
     writeAdoptionChecklistStore,
 } from '../utils/adoptionChecklist';
@@ -57,9 +58,15 @@ export const useAdoptionChecklist = () => {
         });
     }, []);
 
+    const replaceChecklistStore = useCallback((next: Record<number, AdoptionChecklist>) => {
+        setChecklists(() => normalizeAdoptionChecklistStore(next));
+    }, []);
+
     return {
+        checklists,
         getChecklistForPet,
         setChecklistItem,
         setChecklistNotes,
+        replaceChecklistStore,
     };
 };

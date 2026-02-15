@@ -41,6 +41,9 @@
 - **Topic:** Personal fit settings navigation
   - **Rule:** Personal preference controls should be discoverable from a top-level `Settings` tab with an explicit opt-in toggle; sorting-by-score should remain disabled until enabled.
   - **Reason:** Makes source-of-score behavior obvious and avoids confusion that rankings are always active.
+- **Topic:** Local app state import robustness
+  - **Rule:** Import handlers should read uploaded files through a layered strategy (`file.text()` then `arrayBuffer` decode then `FileReader` fallback) and clear the file input in `finally`.
+  - **Reason:** Keeps local export/import stable across browsers and test runtimes where a single file API may be missing, while allowing repeated imports without forcing a full component remount.
 
 ## Patterns & Recipes
 - **Topic:** Pet-local state persistence
@@ -49,3 +52,6 @@
 - **Topic:** Clipboard sharing resilience
   - **Rule:** Keep copy/share text generation in `src/utils/petSummary.ts`, and in `PetModal` attempt `navigator.clipboard.writeText` first, then fallback to `document.execCommand('copy')` with an explicit user-facing error state when both paths fail.
   - **Reason:** This preserves a dependable share flow in modern browsers and older/jsdom-like contexts, with consistent copy success/failure messaging.
+- **Topic:** Test-safe file upload interactions
+  - **Rule:** In integration tests, set hidden file inputs via `DataTransfer` when available and assert `change` dispatch; fallback to a compatible FileList shim only when needed.
+  - **Reason:** This avoids brittle assumptions about `File.text()`/`FileList` behavior across jsdom and browser environments and still exercises the real import handler path.

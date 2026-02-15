@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from '@mui/material/styles';
 import { act } from 'react';
@@ -7,10 +7,19 @@ import theme from './theme';
 import { buildDetailsXml, buildSearchXml, createPet, createPetDetails } from './test/fixtures';
 import { NEW_MATCH_STORAGE_KEY } from './utils/newMatchTracker';
 import { DATA_FRESHNESS_KEY } from './utils/dataFreshness';
-import { SEARCH_PRESET_STORAGE_KEY } from './utils/searchPresets';
+import {
+    SEARCH_PRESET_STORAGE_KEY,
+    createSearchPreset,
+    SearchPreset,
+} from './utils/searchPresets';
 import { ADOPTION_CHECKLIST_STORAGE_KEY } from './utils/adoptionChecklist';
 import { PERSONAL_FIT_ENABLED_KEY, PERSONAL_FIT_PREFERENCES_KEY } from './utils/personalFitScoring';
 import { writeCachedPetDetails, writeCachedPetList } from './utils/offlineCache';
+import {
+    buildLocalAppStateExport,
+} from './utils/localAppState';
+import { FAVORITES_STORAGE_KEY, FAVORITES_DISCLAIMER_KEY } from './hooks/useFavorites';
+import { SEEN_PETS_STORAGE_KEY, SEEN_ENABLED_STORAGE_KEY } from './hooks/useSeenPets';
 
 const toResponse = (body: string, status = 200): Response =>
     ({
@@ -18,6 +27,37 @@ const toResponse = (body: string, status = 200): Response =>
         status,
         text: async () => body,
     }) as Response;
+
+const createFileListFromFile = (file: File): FileList => {
+    if (typeof DataTransfer !== 'undefined') {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        return dataTransfer.files;
+    }
+
+    return {
+        0: file,
+        length: 1,
+        item: (index: number) => (index === 0 ? file : null),
+    } as unknown as FileList;
+};
+
+const setInputFiles = (input: HTMLInputElement, file: File) => {
+    const files = createFileListFromFile(file);
+
+    try {
+        Object.defineProperty(input, 'files', {
+            configurable: true,
+            writable: false,
+            enumerable: true,
+            value: files,
+        });
+    } catch {
+        Object.assign(input, { files });
+    }
+
+    fireEvent.change(input);
+};
 
 const renderApp = () =>
     render(
@@ -248,6 +288,162 @@ describe('App', () => {
         expect(screen.getByRole('heading', { name: 'Personal fit scoring' })).toBeInTheDocument();
         expect(screen.getByRole('checkbox', { name: /Enable|Enabled/i })).toBeInTheDocument();
         expect(screen.queryByRole('textbox', { name: 'Search by name or breed' })).not.toBeInTheDocument();
+    });
+
+    it('exports local app state from Settings to a JSON file', async () => {
+        const favoritesExport = [
+            {
+                ...createPet({ ID: 700, Name: 'Milo', Species: 'Dog' }),
+                savedAt: Date.now(),
+            },
+        ];
+        const seenPetsExport = [{ id: 700, species: 'Dog', timestamp: Date.now() }];
+        const preset: SearchPreset = createSearchPreset('Milo List', 1, {
+            searchQuery: 'Milo',
+            breed: ['Mixed Breed'],
+            gender: 'Female',
+            age: { min: '', max: '' },
+            stage: 'Available',
+            sortBy: 'age',
+            hideSeen: false,
+        });
+        const checklist = {
+            700: {
+                items: {
+                    good_with_children: true,
+                    good_with_other_pets: false,
+                    energy_level_fit: false,
+                },
+                notes: 'Bring a toy',
+            },
+        };
+
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favoritesExport));
+        localStorage.setItem(FAVORITES_DISCLAIMER_KEY, 'true');
+        localStorage.setItem(SEEN_PETS_STORAGE_KEY, JSON.stringify(seenPetsExport));
+        localStorage.setItem(SEEN_ENABLED_STORAGE_KEY, JSON.stringify(true));
+        localStorage.setItem(SEARCH_PRESET_STORAGE_KEY, JSON.stringify([preset]));
+        localStorage.setItem(ADOPTION_CHECKLIST_STORAGE_KEY, JSON.stringify(checklist));
+
+        const createObjectURLSpy = vi.fn().mockReturnValue('blob:local-app-state');
+        const revokeObjectURLSpy = vi.fn().mockImplementation(() => undefined);
+        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+        const originalCreateObjectURL = URL.createObjectURL;
+        const originalRevokeObjectURL = URL.revokeObjectURL;
+        (URL as unknown as { createObjectURL: () => string }).createObjectURL = createObjectURLSpy;
+        (URL as unknown as { revokeObjectURL: (objectUrl: string) => void }).revokeObjectURL = revokeObjectURLSpy;
+
+        setLocationSearch('tab=5');
+        renderApp();
+
+        await screen.findByRole('button', { name: 'Export local app state' });
+        try {
+            await userEvent.click(screen.getByRole('button', { name: 'Export local app state' }));
+
+            expect(createObjectURLSpy).toHaveBeenCalledTimes(1);
+            const exportedPayloadSource = createObjectURLSpy.mock.calls[0]?.[0];
+            expect(exportedPayloadSource).toBeDefined();
+            expect((exportedPayloadSource as Blob).size).toBeGreaterThan(0);
+            expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:local-app-state');
+
+            const exportAlerts = await screen.findAllByRole('alert');
+            const exportAlert = exportAlerts.find((alert) => (
+                /Export complete: 1 favorites, 1 seen pets, 1 presets,?\s+and 1 checklist entries exported\./i.test(alert.textContent ?? '')
+            ));
+            expect(exportAlert).toBeDefined();
+            expect(exportAlert!).toHaveTextContent(
+                /Export complete: 1 favorites, 1 seen pets, 1 presets,?\s+and 1 checklist entries exported\./i
+            );
+        } finally {
+            (URL as unknown as { createObjectURL: typeof originalCreateObjectURL | undefined }).createObjectURL = originalCreateObjectURL;
+            (URL as unknown as { revokeObjectURL: typeof originalRevokeObjectURL | undefined }).revokeObjectURL = originalRevokeObjectURL;
+            clickSpy.mockRestore();
+        }
+    });
+
+    it('imports local app state from a JSON file and updates local state', async () => {
+        const importPayload = buildLocalAppStateExport({
+            favorites: [{
+                ...createPet({ ID: 701, Name: 'Luna', Species: 'Cat' }),
+                savedAt: Date.now(),
+            }],
+            seenPets: [{ id: 701, species: 'Cat', timestamp: Date.now() }],
+            seenEnabled: true,
+            favoritesDisclaimerAccepted: true,
+            searchPresets: [createSearchPreset('Luna List', 2, {
+                searchQuery: 'Luna',
+                breed: ['Tabby'],
+                gender: 'Female',
+                age: { min: '', max: '' },
+                stage: 'Available',
+                sortBy: 'breed',
+                hideSeen: false,
+            })],
+            adoptionChecklists: {
+                701: {
+                    items: {
+                        good_with_children: true,
+                        good_with_other_pets: true,
+                        energy_level_fit: false,
+                    },
+                    notes: 'Need a cat-proof home',
+                },
+            },
+        });
+
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([]));
+        localStorage.setItem(SEARCH_PRESET_STORAGE_KEY, JSON.stringify([]));
+        localStorage.setItem(ADOPTION_CHECKLIST_STORAGE_KEY, JSON.stringify({}));
+
+        setLocationSearch('tab=5');
+        renderApp();
+
+        await screen.findByRole('button', { name: 'Import local app state' });
+
+        const importFile = new File([JSON.stringify(importPayload)], 'state.json', {
+            type: 'application/json',
+        });
+        const importInput = screen.getByLabelText('Local app state import file') as HTMLInputElement;
+        const changeSpy = vi.fn();
+        importInput.addEventListener('change', changeSpy);
+        await setInputFiles(importInput, importFile);
+        expect(changeSpy).toHaveBeenCalledTimes(1);
+
+        const importCompleteAlert = await screen.findByText(
+            /Import complete:\s+1 favorites,\s+1 seen pets,\s+1 presets,\s+and\s+1 checklist entries imported\./i
+        );
+        expect(importCompleteAlert).toBeInTheDocument();
+
+        const favorites = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || '[]');
+        const seen = JSON.parse(localStorage.getItem(SEEN_PETS_STORAGE_KEY) || '[]');
+        const presets = JSON.parse(localStorage.getItem(SEARCH_PRESET_STORAGE_KEY) || '[]');
+        const checklists = JSON.parse(localStorage.getItem(ADOPTION_CHECKLIST_STORAGE_KEY) || '{}');
+
+        expect(favorites).toHaveLength(1);
+        expect(favorites[0].Name).toBe('Luna');
+        expect(seen).toHaveLength(1);
+        expect(seen[0].id).toBe(701);
+        expect(presets[0].name).toBe('Luna List');
+        expect(checklists[701].notes).toBe('Need a cat-proof home');
+        expect(localStorage.getItem(SEEN_ENABLED_STORAGE_KEY)).toBe('true');
+        expect(localStorage.getItem(FAVORITES_DISCLAIMER_KEY)).toBe('true');
+        expect(screen.getByText('1 favorited')).toBeInTheDocument();
+    });
+
+    it('shows a validation error when importing malformed local state', async () => {
+        setLocationSearch('tab=5');
+        renderApp();
+
+        await screen.findByRole('button', { name: 'Import local app state' });
+
+        const importFile = new File(['not-json'], 'state.json', { type: 'application/json' });
+        const importInput = screen.getByLabelText('Local app state import file') as HTMLInputElement;
+        const changeSpy = vi.fn();
+        importInput.addEventListener('change', changeSpy);
+        await setInputFiles(importInput, importFile);
+        expect(changeSpy).toHaveBeenCalledTimes(1);
+
+        expect(await screen.findByText(/Backup file is not valid JSON\./i)).toBeInTheDocument();
     });
 
     it('enables personal fit from Settings and unlocks score sort', async () => {

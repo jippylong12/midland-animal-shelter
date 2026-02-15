@@ -216,7 +216,7 @@ const writePetDetailsCacheStore = (store: PetDetailsCacheStore) => {
     }
 };
 
-const normalizeCachedPet = (value: unknown): AdoptableSearch | null => {
+export const normalizeCachedPet = (value: unknown): AdoptableSearch | null => {
     if (!isRecord(value)) return null;
     const id = parseNumber(value.ID, Number.NaN);
     if (!Number.isInteger(id) || id < 0) return null;

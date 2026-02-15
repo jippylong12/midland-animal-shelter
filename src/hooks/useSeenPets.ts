@@ -1,65 +1,144 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AdoptableSearch } from '../types';
 
-interface SeenPet {
+export const SEEN_PETS_STORAGE_KEY = 'seenPets';
+export const SEEN_ENABLED_STORAGE_KEY = 'seenPetsEnabled';
+export const SEEN_EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+export interface SeenPet {
     id: number;
     species: string;
     timestamp: number;
 }
 
-const STORAGE_KEY_SEEN_PETS = 'seenPets';
-const STORAGE_KEY_SEEN_ENABLED = 'seenPetsEnabled';
-const EXPIRATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+type UnknownRecord = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is UnknownRecord =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const parseNumber = (value: unknown, fallback: number): number => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return value;
+    }
+
+    if (typeof value === 'string' && value.trim() !== '') {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed)) {
+            return parsed;
+        }
+    }
+
+    return fallback;
+};
+
+const parseString = (value: unknown): string => (typeof value === 'string' ? value : '');
+
+const normalizeSeenPet = (value: unknown, fallbackTimestamp: number): SeenPet | null => {
+    if (!isRecord(value)) {
+        return null;
+    }
+
+    const id = parseNumber(value.id, Number.NaN);
+    if (!Number.isInteger(id) || id < 0) {
+        return null;
+    }
+
+    const timestamp = parseNumber(value.timestamp, fallbackTimestamp);
+    return {
+        id,
+        species: parseString(value.species),
+        timestamp,
+    };
+};
+
+const normalizeSeenPets = (value: unknown): SeenPet[] => {
+    const now = Date.now();
+
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .map((entry) => normalizeSeenPet(entry, now))
+        .filter((item): item is SeenPet => Boolean(item))
+        .filter((item) => now - item.timestamp < SEEN_EXPIRATION_MS);
+};
+
+const readSeenPetsFromStorage = (): SeenPet[] => {
+    try {
+        const storedSeenPets = localStorage.getItem(SEEN_PETS_STORAGE_KEY);
+        if (!storedSeenPets) {
+            return [];
+        }
+
+        const parsed = JSON.parse(storedSeenPets);
+        return normalizeSeenPets(parsed);
+    } catch (error) {
+        console.error('Failed to parse seen pets from localStorage', error);
+        return [];
+    }
+};
+
+const writeSeenPetsToStorage = (seenPets: SeenPet[]) => {
+    try {
+        localStorage.setItem(SEEN_PETS_STORAGE_KEY, JSON.stringify(seenPets));
+    } catch (error) {
+        console.error('Error saving seen pet state', error);
+    }
+};
+
+const writeSeenEnabledToStorage = (enabled: boolean) => {
+    try {
+        localStorage.setItem(SEEN_ENABLED_STORAGE_KEY, JSON.stringify(enabled));
+    } catch (error) {
+        console.error('Error saving seen feature state', error);
+    }
+};
 
 export const useSeenPets = () => {
-    // Load from localStorage on mount (lazy initialization)
     const [isSeenEnabled, setIsSeenEnabled] = useState<boolean>(() => {
-        const storedEnabled = localStorage.getItem(STORAGE_KEY_SEEN_ENABLED);
-        return storedEnabled ? JSON.parse(storedEnabled) : false;
+        try {
+            const storedEnabled = localStorage.getItem(SEEN_ENABLED_STORAGE_KEY);
+            return storedEnabled ? JSON.parse(storedEnabled) : false;
+        } catch {
+            return false;
+        }
     });
 
-    const [seenPets, setSeenPets] = useState<SeenPet[]>(() => {
-        const storedSeenPets = localStorage.getItem(STORAGE_KEY_SEEN_PETS);
-        if (storedSeenPets) {
-            try {
-                const parsed: SeenPet[] = JSON.parse(storedSeenPets);
-                const now = Date.now();
-                // Filter out expired items
-                const validPets = parsed.filter(pet => now - pet.timestamp < EXPIRATION_MS);
-                
-                // Update storage if we filtered anything out (side effect in initializer is okay-ish, but better in effect)
-                // We'll let the effect handle the update
-                return validPets;
-            } catch (e) {
-                console.error("Failed to parse seen pets from localStorage", e);
-                return [];
-            }
-        }
-        return [];
-    });
+    const [seenPets, setSeenPets] = useState<SeenPet[]>(() => readSeenPetsFromStorage());
 
     // Persist changes to localStorage
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY_SEEN_ENABLED, JSON.stringify(isSeenEnabled));
+        writeSeenEnabledToStorage(isSeenEnabled);
     }, [isSeenEnabled]);
 
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEY_SEEN_PETS, JSON.stringify(seenPets));
+        writeSeenPetsToStorage(seenPets);
     }, [seenPets]);
 
+    const replaceSeenState = useCallback((nextSeenPets: SeenPet[]) => {
+        const sanitized = normalizeSeenPets(nextSeenPets);
+        setSeenPets(sanitized);
+    }, []);
+
+    const setSeenEnabled = useCallback((next: boolean) => {
+        setIsSeenEnabled(next);
+    }, []);
+
     const toggleSeenFeature = useCallback(() => {
-        setIsSeenEnabled(prev => !prev);
+        setIsSeenEnabled((prev) => !prev);
     }, []);
 
     const markAsSeen = useCallback((pet: AdoptableSearch) => {
         if (!isSeenEnabled) return;
 
         setSeenPets(prev => {
-            // Check if already seen
             if (prev.some(p => p.id === pet.ID && p.species === pet.Species)) {
                 return prev;
             }
-            return [...prev, { id: pet.ID, species: pet.Species, timestamp: Date.now() }];
+
+            const next = [...prev, { id: pet.ID, species: pet.Species, timestamp: Date.now() }];
+            return next;
         });
     }, [isSeenEnabled]);
 
@@ -71,14 +150,17 @@ export const useSeenPets = () => {
             const now = Date.now();
             let changed = false;
 
-            pets.forEach(pet => {
+            pets.forEach((pet) => {
                 if (!prev.some(p => p.id === pet.ID && p.species === pet.Species)) {
                     newSeenPets.push({ id: pet.ID, species: pet.Species, timestamp: now });
                     changed = true;
                 }
             });
 
-            return changed ? newSeenPets : prev;
+            if (!changed) {
+                return prev;
+            }
+            return newSeenPets;
         });
     }, [isSeenEnabled]);
 
@@ -93,6 +175,8 @@ export const useSeenPets = () => {
         toggleSeenFeature,
         markAsSeen,
         markAllAsSeen,
-        isSeen
+        isSeen,
+        replaceSeenState,
+        setSeenEnabled,
     };
 };

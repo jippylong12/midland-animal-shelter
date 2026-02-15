@@ -102,7 +102,7 @@ export const normalizeSearchPresetFilters = (value: unknown): SearchPresetFilter
     };
 };
 
-const normalizeSearchPreset = (value: unknown): SearchPreset | null => {
+export const normalizeSearchPreset = (value: unknown): SearchPreset | null => {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
 
     const data = value as UnknownObject;
