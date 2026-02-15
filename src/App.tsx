@@ -8,7 +8,16 @@ import {
     AdoptableSearch,
     Root,
 } from './types';
-import { SelectChangeEvent, useMediaQuery } from '@mui/material';
+import {
+    SelectChangeEvent,
+    useMediaQuery,
+    Box,
+    Container,
+    Paper,
+    Stack,
+    Typography,
+    Chip,
+} from '@mui/material';
 
 // MUI Icons
 import PetsIcon from '@mui/icons-material/Pets';
@@ -16,11 +25,6 @@ import DogIcon from '@mui/icons-material/EmojiNature'; // Replace with appropria
 import CatIcon from '@mui/icons-material/Pets'; // Replace with appropriate icons
 import SmallAnimalIcon from '@mui/icons-material/Pets'; // Replace with appropriate icons
 import StarIcon from '@mui/icons-material/Star';
-
-// MUI Components
-import {
-    Box,
-} from '@mui/material';
 
 // Custom Components
 import Header from './components/Header';
@@ -34,6 +38,10 @@ import { useFavorites } from './hooks/useFavorites';
 import { useSeenPets } from './hooks/useSeenPets';
 
 const parser = new XMLParser();
+const speciesIdMap: number[] = [0, 1, 2, 1003, -1];
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
 
 function App() {
     // State for search query
@@ -48,9 +56,6 @@ function App() {
         { label: 'Small Animals', icon: <SmallAnimalIcon /> },
         { label: 'Favorites', icon: <StarIcon /> },
     ];
-
-    // Mapping of tab indices to species IDs
-    const speciesIdMap: number[] = [0, 1, 2, 1003, -1];
 
     // States for filters
     const [breed, setBreed] = useState<string[]>([]); // Changed to array for multi-select
@@ -85,7 +90,7 @@ function App() {
     const { favorites, toggleFavorite, isFavorite, isDisclaimerOpen, acceptDisclaimer, closeDisclaimer, checkAvailability } = useFavorites();
 
     // Seen Pets Hook
-    const { isSeenEnabled, toggleSeenFeature, markAsSeen, markAllAsSeen, isSeen } = useSeenPets();
+    const { seenPets, isSeenEnabled, toggleSeenFeature, markAsSeen, markAllAsSeen, isSeen } = useSeenPets();
 
     // Handler functions
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -102,7 +107,7 @@ function App() {
         setSearchQuery(event.target.value);
     };
 
-    const handleBreedChange = (_: any, value: string[]) => {
+    const handleBreedChange = (_: React.SyntheticEvent<Element, Event>, value: string[]) => {
         setBreed(value);
     };
 
@@ -121,6 +126,16 @@ function App() {
 
     const handleSortByChange = (event: SelectChangeEvent<string>) => {
         setSortBy(event.target.value);
+    };
+
+    const handleClearFilters = () => {
+        setSearchQuery('');
+        setBreed([]);
+        setGender('');
+        setAge({ min: '', max: '' });
+        setStage('');
+        setSortBy('');
+        setHideSeen(false);
     };
 
     // Handle Page Change
@@ -176,9 +191,9 @@ function App() {
                 });
 
                 setPets(adoptableSearchList);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('Error fetching pets:', err);
-                setError(err.message || 'Failed to fetch pets.');
+                setError(getErrorMessage(err, 'Failed to fetch pets.'));
             } finally {
                 setLoading(false); // End loading
             }
@@ -297,15 +312,52 @@ function App() {
         }
     });
     const uniqueStages = Array.from(uniqueStagesSet).sort();
+    const hasActiveFilters =
+        searchQuery.trim().length > 0 ||
+        breed.length > 0 ||
+        Boolean(gender) ||
+        Boolean(stage) ||
+        Boolean(age.min) ||
+        Boolean(age.max) ||
+        Boolean(sortBy) ||
+        hideSeen;
 
     return (
-        <Box sx={{ flexGrow: 1, backgroundColor: 'background.default', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            {/* AppBar with Tabs */}
-            <Header selectedTab={selectedTab} onTabChange={handleTabChange} tabLabels={tabLabels} />
+        <Box className="App" sx={{ flexGrow: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <Header
+                selectedTab={selectedTab}
+                onTabChange={handleTabChange}
+                tabLabels={tabLabels}
+                filteredCount={sortedPets.length}
+                favoritesCount={favorites.length}
+            />
 
-            {/* Main Content */}
-            <Box sx={{ padding: 3, flexGrow: 1 }}>
-                {/* Search and Filters */}
+            <Container maxWidth="xl" sx={{ py: { xs: 2, md: 3 }, flexGrow: 1 }}>
+                <Paper
+                    sx={{
+                        mb: 2.5,
+                        p: { xs: 2, md: 2.5 },
+                        background: 'linear-gradient(120deg, rgba(230, 244, 227, 0.95) 0%, rgba(255, 247, 230, 0.9) 100%)',
+                        animation: 'fadeUp 300ms ease-out',
+                    }}
+                >
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.2} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
+                        <Box>
+                            <Typography variant="h6">
+                                {tabLabels[selectedTab].label}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Tap a pet card to view full intake details and adoption links.
+                            </Typography>
+                        </Box>
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            <Chip color="primary" label={`${sortedPets.length} results`} />
+                            <Chip variant="outlined" label={`${favorites.length} favorited`} />
+                            <Chip variant="outlined" label={`${seenPets.length} seen`} />
+                        </Stack>
+                    </Stack>
+                </Paper>
+
                 <Filters
                     searchQuery={searchQuery}
                     onSearchChange={handleSearchChange}
@@ -325,9 +377,10 @@ function App() {
                     onToggleSeenFeature={toggleSeenFeature}
                     hideSeen={hideSeen}
                     onHideSeenChange={setHideSeen}
+                    hasActiveFilters={hasActiveFilters}
+                    onClearFilters={handleClearFilters}
                 />
 
-                {/* Pet List */}
                 <PetList
                     pets={paginatedPets}
                     loading={loading}
@@ -341,14 +394,11 @@ function App() {
                     isSeen={isSeen}
                 />
 
-                {/* Pagination Controls */}
                 <PaginationControls totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} />
-            </Box>
+            </Container>
 
-            {/* Footer Disclaimer */}
             <Footer />
 
-            {/* Modal for Pet Details */}
             <PetModal
                 isOpen={isModalOpen}
                 animalID={selectedAnimalID}
@@ -366,11 +416,7 @@ function App() {
                 isSeen={isSeen}
             />
 
-            <DisclaimerDialog
-                open={isDisclaimerOpen}
-                onAccept={acceptDisclaimer}
-                onClose={closeDisclaimer}
-            />
+            <DisclaimerDialog open={isDisclaimerOpen} onAccept={acceptDisclaimer} onClose={closeDisclaimer} />
         </Box>
     );
 }

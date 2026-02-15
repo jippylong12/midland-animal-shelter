@@ -29,40 +29,42 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick, isFavorite, onToggleFav
     };
 
     return (
-        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <CardActionArea onClick={onClick} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <CardActionArea component="div" onClick={onClick} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer' }}>
                 <Box sx={{ position: 'relative', width: '100%' }}>
                     <CardMedia
                         component="img"
-                        height="240"
+                        height="230"
                         image={pet.Photo || '/placeholder.png'}
                         alt={pet.Name}
-                        onError={(e: any) => { e.target.onerror = null; e.target.src = '/placeholder.png'; }}
-                        sx={{ objectFit: 'cover' }}
+                        onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = '/placeholder.png';
+                        }}
+                        sx={{ objectFit: 'cover', filter: isSeen ? 'grayscale(18%) saturate(0.8)' : 'none' }}
                     />
                     <IconButton
                         onClick={(e) => {
                             e.stopPropagation();
-                            e.preventDefault(); // Prevent default action just in case
+                            e.preventDefault();
                             onToggleFavorite();
                         }}
-                        onMouseDown={(e) => e.stopPropagation()} // Stop propagation for mouse down as well
+                        onMouseDown={(e) => e.stopPropagation()}
                         sx={{
                             position: 'absolute',
                             top: 8,
                             right: 8,
                             color: isFavorite ? '#FFD700' : 'white',
-                            backgroundColor: 'rgba(0,0,0,0.3)',
+                            backgroundColor: 'rgba(26, 42, 29, 0.36)',
                             '&:hover': {
-                                backgroundColor: 'rgba(0,0,0,0.5)',
+                                backgroundColor: 'rgba(26, 42, 29, 0.58)',
                             },
-                            zIndex: 10 // Ensure it's above the image
+                            zIndex: 10,
                         }}
                     >
                         {isFavorite ? <StarIcon /> : <StarBorderIcon />}
                     </IconButton>
 
-                    {/* Seen Button */}
                     {isSeenEnabled && (
                         <IconButton
                             onClick={(e) => {
@@ -74,22 +76,36 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick, isFavorite, onToggleFav
                             sx={{
                                 position: 'absolute',
                                 top: 8,
-                                left: 8, // Position to the top-left
+                                left: 8,
                                 color: isSeen ? 'rgba(255, 255, 255, 0.8)' : 'white',
-                                backgroundColor: 'rgba(0,0,0,0.3)',
+                                backgroundColor: 'rgba(26, 42, 29, 0.36)',
                                 '&:hover': {
-                                    backgroundColor: 'rgba(0,0,0,0.5)',
+                                    backgroundColor: 'rgba(26, 42, 29, 0.58)',
                                 },
-                                zIndex: 10
+                                zIndex: 10,
                             }}
                         >
                             <VisibilityIcon />
                         </IconButton>
                     )}
+
+                    {pet.Stage && (
+                        <Chip
+                            label={pet.Stage}
+                            size="small"
+                            sx={{
+                                ...getStageColor(pet.Stage),
+                                position: 'absolute',
+                                left: 10,
+                                bottom: 10,
+                                fontWeight: 700,
+                            }}
+                        />
+                    )}
                 </Box>
-                <CardContent sx={{ width: '100%', p: 2, opacity: isSeen ? 0.6 : 1 }}>
+                <CardContent sx={{ width: '100%', p: 2, opacity: isSeen ? 0.66 : 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold', mb: 0 }}>
+                        <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 800, mb: 0 }}>
                             {pet.Name}
                         </Typography>
                         <Chip
@@ -98,7 +114,7 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick, isFavorite, onToggleFav
                             sx={{
                                 bgcolor: pet.Sex === 'Male' ? '#2196f3' : pet.Sex === 'Female' ? '#f48fb1' : undefined,
                                 color: (pet.Sex === 'Male' || pet.Sex === 'Female') ? 'white' : 'text.primary',
-                                borderColor: 'transparent'
+                                borderColor: 'transparent',
                             }}
                             variant="filled"
                         />
@@ -116,13 +132,6 @@ const PetCard: React.FC<PetCardProps> = ({ pet, onClick, isFavorite, onToggleFav
                             size="small"
                             variant="outlined"
                         />
-                        {pet.Stage && (
-                            <Chip
-                                label={pet.Stage}
-                                size="small"
-                                sx={getStageColor(pet.Stage)}
-                            />
-                        )}
                     </Box>
                 </CardContent>
             </CardActionArea>

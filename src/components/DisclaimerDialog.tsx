@@ -9,7 +9,7 @@ interface DisclaimerDialogProps {
 
 const DisclaimerDialog: React.FC<DisclaimerDialogProps> = ({ open, onAccept, onClose }) => {
     return (
-        <Dialog open={open} onClose={onClose}>
+        <Dialog open={open} onClose={onClose} PaperProps={{ sx: { borderRadius: 3 } }}>
             <DialogTitle>Favorites Feature</DialogTitle>
             <DialogContent>
                 <DialogContentText>

@@ -40,13 +40,15 @@ interface PetModalProps {
 }
 
 const parser = new XMLParser();
+const getErrorMessage = (error: unknown, fallback: string) =>
+    error instanceof Error ? error.message : fallback;
 
 const InfoRow = ({ label, value, subValue }: { label: string, value?: string | number | null, subValue?: string | null }) => {
     if (!value) return null;
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', py: 0.5 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(26, 42, 29, 0.16)', py: 0.8, gap: 2 }}>
             <Typography variant="body2" color="text.secondary" fontWeight="bold">{label}</Typography>
-            <Typography variant="body2" color="text.primary" align="right">
+            <Typography variant="body2" color="text.primary" align="right" sx={{ maxWidth: '60%' }}>
                 {value} {subValue && `(${subValue})`}
             </Typography>
         </Box>
@@ -95,9 +97,9 @@ const PetModal: React.FC<PetModalProps> = ({
                 const data = await response.text();
                 const xmlData = parser.parse(data) as AdoptableDetailsXmlNode;
                 setModalData(xmlData.adoptableDetails);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('Error fetching detailed pet data:', err);
-                setModalError(err.message || 'Failed to fetch detailed pet data.');
+                setModalError(getErrorMessage(err, 'Failed to fetch detailed pet data.'));
             } finally {
                 setModalLoading(false);
             }
@@ -118,8 +120,23 @@ const PetModal: React.FC<PetModalProps> = ({
     };
 
     return (
-        <Dialog open={isOpen} onClose={onClose} maxWidth="md" fullWidth scroll="paper">
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Dialog
+            open={isOpen}
+            onClose={onClose}
+            maxWidth="md"
+            fullWidth
+            scroll="paper"
+            PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}
+        >
+            <DialogTitle
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: 'linear-gradient(110deg, rgba(230, 244, 227, 0.95) 0%, rgba(255, 247, 230, 0.95) 100%)',
+                    borderBottom: '1px solid rgba(26, 42, 29, 0.1)',
+                }}
+            >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="h5" component="div" fontWeight="bold">
                         {modalData ? modalData.AnimalName : 'Pet Details'}
@@ -155,7 +172,7 @@ const PetModal: React.FC<PetModalProps> = ({
                         </IconButton>
                     )}
                 </Box>
-                <Button onClick={onClose} color="inherit">Close</Button>
+                <Button onClick={onClose} color="inherit" variant="outlined">Close</Button>
             </DialogTitle>
             <DialogContent dividers>
                 {modalLoading ? (
@@ -273,7 +290,7 @@ const PetModal: React.FC<PetModalProps> = ({
                                 )}
 
                                 {modalData.Dsc && (
-                                    <Box sx={{ mt: 2, p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+                                    <Box sx={{ mt: 2, p: 2, bgcolor: 'background.default', borderRadius: 2, border: '1px solid rgba(26, 42, 29, 0.08)' }}>
                                         <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
                                             {modalData.Dsc}
                                         </Typography>

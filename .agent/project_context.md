@@ -1,0 +1,29 @@
+# Project Context
+
+## Constraints
+- Keep the app on React + TypeScript + MUI; do not introduce alternate UI frameworks.
+- Preserve existing core behaviors: API fetch, tabs, filters, pagination, favorites, seen-history, and modal details.
+- Keep responsive behavior for mobile and desktop as a first-class requirement.
+- Validate frontend changes with `npm run lint` and `npm run build` before completion.
+
+## Anti-Patterns
+- Do not replace established state flow with global state libraries for simple UI changes.
+- Do not remove disclaimer/favorites consent messaging.
+- Do not change API contract assumptions in UI-only tasks.
+
+## Patterns & Recipes
+- **Topic:** UI refreshes in this codebase
+- **Rule:** Drive look-and-feel through `src/theme.ts` plus lightweight global CSS tokens, then update component surfaces (`Header`, `Filters`, `PetCard`, `PetModal`) without changing data flow.
+- **Reason:** This keeps behavior stable while allowing fast visual redesigns.
+
+- **Topic:** MUI icon dependency refresh during local dev
+- **Rule:** If a newly imported MUI icon triggers transient invalid-hook/duplicate-emotion warnings in Vite dev, restart the dev server and reload.
+- **Reason:** Vite optimized deps can temporarily mix old/new prebundles until a fresh restart.
+
+- **Topic:** Tab selection styling
+- **Rule:** Keep species tabs on an indicator-only selected state (yellow underline) and avoid selected pill/circle tab backgrounds.
+- **Reason:** The product preference is cleaner tab emphasis with only the underline cue.
+
+- **Topic:** Brand green baseline
+- **Rule:** Default brand green should stay on the original MUI green family (`green[500]`/`green[600]`) unless a redesign is explicitly requested.
+- **Reason:** Preserves the established visual identity users expect.

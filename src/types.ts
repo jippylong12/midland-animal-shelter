@@ -72,7 +72,7 @@ export type AdoptableDetails = {
     NoCats: string | null;
     NoKids: string | null;
     BehaviorResult: string | null;
-    MemoList: any; // Use `unknown` if you don't know the structure
+    MemoList: unknown;
     Site: string;
     DateOfSurrender: string;
     TimeInFormerHome: string;
@@ -85,7 +85,7 @@ export type AdoptableDetails = {
     DateOfBirth: string;
     ARN: string | null;
     VideoID: string | null;
-    BehaviorTestList: any; // Use `unknown` if you don't know the structure
+    BehaviorTestList: unknown;
     Stage: string;
     AnimalType: string;
     AgeGroup: string;

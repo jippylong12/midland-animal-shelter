@@ -1,7 +1,7 @@
 // src/components/Footer.tsx
 
 import React from 'react';
-import { Box, Typography, Link } from '@mui/material';
+import { Box, Typography, Link, Container, Stack } from '@mui/material';
 import { APP_VERSION } from '../version';
 
 const Footer: React.FC = () => {
@@ -10,25 +10,36 @@ const Footer: React.FC = () => {
             id="disclaimer"
             component="footer"
             sx={{
-                backgroundColor: 'grey.200',
-                padding: 2,
-                textAlign: 'center',
+                mt: 5,
+                py: { xs: 3, md: 4 },
+                background: 'linear-gradient(180deg, rgba(229, 241, 226, 0.95) 0%, rgba(238, 246, 235, 0.98) 100%)',
+                borderTop: '1px solid rgba(47, 125, 50, 0.15)',
             }}
         >
-            <Typography variant="caption" color="text.secondary">
-                Disclaimer: The information provided on this website is for informational purposes only. We are not affiliated with or endorsed by the City of Midland, nor are we attempting to impersonate them. While we strive to keep the information accurate and up to date, we make no representations or warranties of any kind, express or implied, about the accuracy, reliability, or completeness of the information. We are not liable for any inaccuracies, lost time, or other consequences arising from reliance on this information. For official and up-to-date details, please refer to the City of Midland's Animals Currently in the Shelter webpage:{' '}
-                <Link
-                    href="https://www.midlandtexas.gov/1030/Animals-currently-in-the-Shelter"
-                    target="_blank"
-                    rel="noopener"
-                >
-                    https://www.midlandtexas.gov/1030/Animals-currently-in-the-Shelter
-                </Link>
-                .
-            </Typography>
-            <Typography variant="caption" display="block" sx={{ marginTop: 1 }}>
-                v{APP_VERSION}
-            </Typography>
+            <Container maxWidth="lg">
+                <Stack spacing={1.2} sx={{ textAlign: { xs: 'left', md: 'center' } }}>
+                    <Typography variant="subtitle2" sx={{ letterSpacing: '0.03em' }}>
+                        Disclaimer
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        This project is an independent convenience tool and is not affiliated with or endorsed by the City of Midland.
+                        We do our best to keep listings accurate, but shelter data can change quickly.
+                        Confirm final availability with the official city listing:
+                        {' '}
+                        <Link
+                            href="https://www.midlandtexas.gov/1030/Animals-currently-in-the-Shelter"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            Animals Currently in the Shelter
+                        </Link>
+                        .
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        v{APP_VERSION}
+                    </Typography>
+                </Stack>
+            </Container>
         </Box>
     );
 };

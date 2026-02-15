@@ -1,61 +1,99 @@
 // src/theme.ts
-import { createTheme } from '@mui/material/styles';
-import { red, orange, green, teal } from '@mui/material/colors';
+import { alpha, createTheme } from '@mui/material/styles';
+import { amber, blueGrey, green, red } from '@mui/material/colors';
 
 const theme = createTheme({
     palette: {
         mode: 'light',
         primary: {
             main: green[500],
+            light: green[400],
+            dark: green[600],
+            contrastText: '#ffffff',
         },
         secondary: {
-            main: teal[500],
+            main: '#c96f16',
+            light: '#e09440',
+            dark: '#9e4f08',
+            contrastText: '#ffffff',
         },
         error: {
             main: red.A400,
         },
+        warning: {
+            main: amber[700],
+        },
         background: {
-            default: '#f0f8ff',
+            default: '#f8fbf5',
             paper: '#ffffff',
         },
         text: {
-            primary: '#333333',
-            secondary: '#555555',
+            primary: '#1a2a1d',
+            secondary: '#4a5c4d',
         },
     },
+    shape: {
+        borderRadius: 16,
+    },
     typography: {
-        fontFamily: `'Quicksand', sans-serif`,
-        fontSize: 16,
+        fontFamily: `'Manrope', 'Nunito Sans', sans-serif`,
+        fontSize: 15,
+        h4: {
+            fontFamily: `'Fraunces', serif`,
+            fontWeight: 700,
+            lineHeight: 1.2,
+        },
+        h5: {
+            fontFamily: `'Fraunces', serif`,
+            fontWeight: 700,
+            lineHeight: 1.25,
+        },
         h6: {
+            fontWeight: 700,
+        },
+        subtitle1: {
             fontWeight: 600,
         },
         button: {
             textTransform: 'none',
+            fontWeight: 700,
+            letterSpacing: '0.01em',
         },
     },
     components: {
         MuiAppBar: {
             styleOverrides: {
-                colorPrimary: {
+                root: {
                     backgroundColor: green[600],
+                    boxShadow: '0 10px 30px rgba(67, 160, 71, 0.25)',
+                },
+            },
+        },
+        MuiPaper: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 18,
+                    border: '1px solid rgba(64, 109, 73, 0.12)',
                 },
             },
         },
         MuiButton: {
             styleOverrides: {
                 root: {
-                    borderRadius: 20,
+                    borderRadius: 999,
+                    paddingInline: 16,
                 },
                 containedPrimary: {
-                    backgroundColor: green[500],
+                    boxShadow: '0 8px 20px rgba(76, 175, 80, 0.24)',
                     '&:hover': {
                         backgroundColor: green[600],
                     },
                 },
-                containedSecondary: {
-                    backgroundColor: teal[500],
+                outlinedPrimary: {
+                    borderColor: alpha(green[700], 0.5),
                     '&:hover': {
-                        backgroundColor: teal[600],
+                        borderColor: green[800],
+                        backgroundColor: alpha(green[700], 0.07),
                     },
                 },
             },
@@ -63,12 +101,13 @@ const theme = createTheme({
         MuiCard: {
             styleOverrides: {
                 root: {
-                    borderRadius: 16,
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-                    transition: 'all 0.3s ease-in-out',
+                    borderRadius: 18,
+                    border: '1px solid rgba(64, 109, 73, 0.1)',
+                    boxShadow: '0 8px 24px rgba(26, 42, 29, 0.08)',
+                    transition: 'transform 220ms ease, box-shadow 220ms ease',
                     '&:hover': {
                         transform: 'translateY(-4px)',
-                        boxShadow: '0 12px 24px rgba(0, 0, 0, 0.1)',
+                        boxShadow: '0 14px 30px rgba(26, 42, 29, 0.14)',
                     },
                 },
             },
@@ -76,27 +115,27 @@ const theme = createTheme({
         MuiTabs: {
             styleOverrides: {
                 indicator: {
-                    backgroundColor: orange[500],
+                    height: 3,
+                    borderRadius: 999,
+                    backgroundColor: '#ffd166',
                 },
             },
         },
         MuiTab: {
             styleOverrides: {
                 root: {
+                    minHeight: 56,
                     textTransform: 'none',
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    color: '#555555', // Default text color
-                    backgroundColor: 'transparent',
-                    borderRadius: '0px',
-                    transition: 'background-color 0.3s, color 0.3s, border-radius 0.3s',
+                    borderRadius: 0,
+                    paddingInline: 14,
+                    color: alpha('#ffffff', 0.86),
+                    fontWeight: 700,
                     '&:hover': {
-                        backgroundColor: 'rgba(224, 242, 241, 0.5)', // Semi-transparent teal
+                        backgroundColor: 'transparent',
                     },
-                    '&.Mui-selected': { // Correct approach for selected state
-                        color: '#ff9800', // Orange text color
-                        backgroundColor: '#e0f2f1', // Light teal background
-                        borderRadius: '10px',
+                    '&.Mui-selected': {
+                        color: '#ffffff',
+                        backgroundColor: 'transparent',
                     },
                 },
             },
@@ -105,23 +144,32 @@ const theme = createTheme({
             styleOverrides: {
                 root: {
                     backgroundColor: '#ffffff',
-                    borderRadius: 10,
+                    borderRadius: 12,
                 },
             },
         },
-        MuiAlert: {
+        MuiOutlinedInput: {
             styleOverrides: {
-                standardError: {
-                    backgroundColor: red[50],
-                    color: red[700],
-                },
-                standardInfo: {
-                    backgroundColor: teal[50],
-                    color: teal[700],
+                root: {
+                    '& fieldset': {
+                        borderColor: alpha(blueGrey[700], 0.2),
+                    },
+                    '&:hover fieldset': {
+                        borderColor: alpha(green[700], 0.4),
+                    },
+                    '&.Mui-focused fieldset': {
+                        borderWidth: 2,
+                    },
                 },
             },
         },
-        // ... other component overrides
+        MuiChip: {
+            styleOverrides: {
+                root: {
+                    fontWeight: 600,
+                },
+            },
+        },
     },
 });
 
@@ -129,10 +177,10 @@ export default theme;
 
 export const getStageColor = (stage: string) => {
     const lowerStage = stage.toLowerCase();
-    if (lowerStage.includes('available')) return { bgcolor: '#4caf50', color: 'white' }; // Green
-    if (lowerStage.includes('pending') || lowerStage.includes('hold')) return { bgcolor: '#ff9800', color: 'white' }; // Orange
-    if (lowerStage.includes('foster')) return { bgcolor: '#9c27b0', color: 'white' }; // Purple
-    if (lowerStage.includes('adopted')) return { bgcolor: '#2196f3', color: 'white' }; // Blue
-    if (lowerStage.includes('deceased')) return { bgcolor: '#9e9e9e', color: 'white' }; // Grey
-    return { bgcolor: '#e0e0e0', color: 'rgba(0, 0, 0, 0.87)' }; // Default Grey
+    if (lowerStage.includes('available')) return { bgcolor: green[500], color: 'white' };
+    if (lowerStage.includes('pending') || lowerStage.includes('hold')) return { bgcolor: '#c96f16', color: 'white' };
+    if (lowerStage.includes('foster')) return { bgcolor: '#0f766e', color: 'white' };
+    if (lowerStage.includes('adopted')) return { bgcolor: '#1d4ed8', color: 'white' };
+    if (lowerStage.includes('deceased')) return { bgcolor: '#6b7280', color: 'white' };
+    return { bgcolor: alpha(green[700], 0.1), color: green[700] };
 };

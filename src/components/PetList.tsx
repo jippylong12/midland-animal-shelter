@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { AdoptableSearch } from '../types';
-import { Grid, Typography, CircularProgress, Box, Button } from '@mui/material';
+import { Grid, Typography, CircularProgress, Box, Button, Paper, Stack } from '@mui/material';
 import PetCard from './PetCard';
 
 interface PetListProps {
@@ -21,38 +21,48 @@ interface PetListProps {
 const PetList: React.FC<PetListProps> = ({ pets, loading, error, onPetClick, isFavorite, toggleFavorite, isSeenEnabled, markAsSeen, markAllAsSeen, isSeen }) => {
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', padding: 2 }}>
-                <CircularProgress />
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                <CircularProgress size={34} />
             </Box>
         );
     }
 
     if (error) {
         return (
-            <Typography color="error" variant="h6" align="center">
-                {error}
-            </Typography>
+            <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Typography color="error" variant="h6" align="center">
+                    {error}
+                </Typography>
+            </Paper>
         );
     }
 
     if (pets.length === 0) {
         return (
-            <Typography variant="h6" align="center">
-                No pets found.
-            </Typography>
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" align="center">
+                    No pets matched these filters.
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Try widening age, breed, or stage to see more pets.
+                </Typography>
+            </Paper>
         );
     }
 
     return (
         <Box>
-            {isSeenEnabled && pets.length > 0 && (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} sx={{ mb: 2 }}>
+                <Typography variant="subtitle1" color="text.secondary">
+                    Showing {pets.length} pet{pets.length === 1 ? '' : 's'} on this page
+                </Typography>
+                {isSeenEnabled && pets.length > 0 && (
                     <Button variant="outlined" onClick={() => markAllAsSeen(pets)}>
-                        Mark All as Seen
+                        Mark page as seen
                     </Button>
-                </Box>
-            )}
-            <Grid container spacing={2}>
+                )}
+            </Stack>
+            <Grid container spacing={2.5}>
                 {pets.map((pet, index) => (
                     <Grid
                         item
@@ -61,7 +71,7 @@ const PetList: React.FC<PetListProps> = ({ pets, loading, error, onPetClick, isF
                         sx={{
                             animation: 'fadeUp 0.5s ease-out forwards',
                             animationDelay: `${index * 0.05}s`,
-                            opacity: 0, // Start invisible
+                            opacity: 0,
                         }}
                     >
                         <PetCard
