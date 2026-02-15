@@ -27,3 +27,7 @@
 - **Topic:** Brand green baseline
 - **Rule:** Default brand green should stay on the original MUI green family (`green[500]`/`green[600]`) unless a redesign is explicitly requested.
 - **Reason:** Preserves the established visual identity users expect.
+
+- **Topic:** Future feature scope for this product
+- **Rule:** Keep roadmap features SPA-contained by default, using only client-side persistence patterns (URL params, localStorage/sessionStorage, in-memory state, or browser cache).
+- **Reason:** The project is intentionally a frontend-only deployment with no backing database or server-owned user state.
