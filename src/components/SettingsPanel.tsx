@@ -8,11 +8,19 @@ import {
     Paper,
     Slider,
     Stack,
+    AlertColor,
     Switch,
     Typography,
 } from '@mui/material';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import { PersonalFitPreferences, getAgePreferenceLabel, getSpecialNeedsPriorityLabel, getStagePriorityLabel } from '../utils/personalFitScoring';
+
+interface SettingsTransferState {
+    message: string;
+    severity: AlertColor;
+}
 
 interface SettingsPanelProps {
     personalFitPreferences: PersonalFitPreferences;
@@ -24,6 +32,10 @@ interface SettingsPanelProps {
     hasNewMatchHistory: boolean;
     onClearCurrentTabNewMatches: () => void;
     onClearAllNewMatches: () => void;
+    onExportLocalAppState: () => void;
+    onImportLocalAppState: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    transferState: SettingsTransferState | null;
+    onClearTransferState: () => void;
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -36,6 +48,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     hasNewMatchHistory,
     onClearCurrentTabNewMatches,
     onClearAllNewMatches,
+    onExportLocalAppState,
+    onImportLocalAppState,
+    transferState,
+    onClearTransferState,
 }) => {
     return (
         <Paper sx={{ mb: 3, p: { xs: 2, md: 3 }, background: 'linear-gradient(120deg, rgba(230, 244, 227, 0.95) 0%, rgba(255, 247, 230, 0.9) 100%)' }}>
@@ -62,6 +78,50 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                             Clear global new-match cache
                         </Button>
                     </Stack>
+                </Stack>
+
+                <Divider />
+
+                <Stack spacing={1.2}>
+                    <Box>
+                        <Typography variant="h6">Local app state transfer</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Export favorites, seen history, saved presets, and checklist data to JSON, then import it on another browser.
+                        </Typography>
+                    </Box>
+
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                        <Button
+                            size="small"
+                            variant="contained"
+                            color="primary"
+                            startIcon={<CloudUploadIcon />}
+                            onClick={onExportLocalAppState}
+                        >
+                            Export local app state
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            component="label"
+                            startIcon={<CloudDownloadIcon />}
+                        >
+                            Import local app state
+                            <input
+                                type="file"
+                                accept="application/json,.json"
+                                onChange={onImportLocalAppState}
+                                hidden
+                                aria-label="Local app state import file"
+                            />
+                        </Button>
+                    </Stack>
+
+                    {transferState ? (
+                        <Alert severity={transferState.severity} onClose={onClearTransferState}>
+                            {transferState.message}
+                        </Alert>
+                    ) : null}
                 </Stack>
 
                 <Divider />
