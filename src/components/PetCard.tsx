@@ -1,14 +1,25 @@
 // PetCard.tsx
 
 import React from 'react';
-import { Card, CardMedia, CardContent, Typography, CardActionArea, Chip, Box, IconButton, Stack, LinearProgress } from '@mui/material';
-import StarIcon from '@mui/icons-material/Star';
-import StarBorderIcon from '@mui/icons-material/StarBorder';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import NewReleasesIcon from '@mui/icons-material/NewReleases';
+import {
+    Card,
+    CardActionArea,
+    CardContent,
+    CardMedia,
+    Chip,
+    LinearProgress,
+    Box,
+    IconButton,
+    Stack,
+    Typography,
+} from '@mui/material';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
+import NewReleasesIcon from '@mui/icons-material/NewReleases';
 import ScoreIcon from '@mui/icons-material/Score';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import StarIcon from '@mui/icons-material/Star';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { AdoptableSearch } from '../types';
 import { getStageColor } from '../theme';
 import { OFFLINE_IMAGE_FALLBACK } from '../utils/imageFallback';
@@ -26,6 +37,7 @@ interface PetCardProps {
     isCompareLimitReached: boolean;
     onToggleCompare: () => void;
     matchScore: number | null;
+    compactView?: boolean;
 }
 
 const PetCard: React.FC<PetCardProps> = ({
@@ -41,7 +53,16 @@ const PetCard: React.FC<PetCardProps> = ({
     isCompareLimitReached,
     onToggleCompare,
     matchScore,
+    compactView = false,
 }) => {
+    const mediaHeight = compactView ? 170 : 230;
+    const contentPadding = compactView ? 1.4 : 2;
+    const contentTitleSpacing = compactView ? 0.3 : 1;
+    const contentSecondarySpacing = compactView ? 0.6 : 1;
+    const chipStackGap = compactView ? 0.6 : 1;
+    const chipStackMarginTop = compactView ? 0.7 : 2;
+    const progressHeight = compactView ? 6 : 7;
+    const compactIconOffset = compactView ? 2 : 3;
 
     const formatAge = (age: number): string => {
         if (age < 12) {
@@ -56,9 +77,9 @@ const PetCard: React.FC<PetCardProps> = ({
         <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <CardActionArea component="div" onClick={onClick} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer' }}>
                 <Box sx={{ position: 'relative', width: '100%' }}>
-                <CardMedia
+                    <CardMedia
                         component="img"
-                        height="230"
+                        height={mediaHeight}
                         image={pet.Photo || OFFLINE_IMAGE_FALLBACK}
                         alt={pet.Name}
                         onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -77,8 +98,8 @@ const PetCard: React.FC<PetCardProps> = ({
                         onMouseDown={(e) => e.stopPropagation()}
                         sx={{
                             position: 'absolute',
-                            top: 8,
-                            right: 8,
+                            top: compactIconOffset,
+                            right: compactIconOffset,
                             color: isFavorite ? '#FFD700' : 'white',
                             backgroundColor: 'rgba(26, 42, 29, 0.36)',
                             '&.Mui-focusVisible': {
@@ -96,7 +117,7 @@ const PetCard: React.FC<PetCardProps> = ({
                     </IconButton>
 
                     {isSeenEnabled && (
-                        <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ position: 'absolute', top: compactIconOffset, left: compactIconOffset, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 1 }}>
                             <IconButton
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -123,7 +144,15 @@ const PetCard: React.FC<PetCardProps> = ({
                         </Box>
                     )}
 
-                    <Box sx={{ position: 'absolute', top: isSeenEnabled ? 58 : 8, left: 8, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{
+                        position: 'absolute',
+                        top: isSeenEnabled ? compactIconOffset + 50 : compactIconOffset,
+                        left: compactIconOffset,
+                        zIndex: 10,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1,
+                    }}>
                         <IconButton
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -160,7 +189,7 @@ const PetCard: React.FC<PetCardProps> = ({
                             sx={{
                                 position: 'absolute',
                                 right: 8,
-                                top: 52,
+                                top: compactView ? 42 : 52,
                                 fontWeight: 800,
                                 zIndex: 10,
                             }}
@@ -174,15 +203,15 @@ const PetCard: React.FC<PetCardProps> = ({
                             sx={{
                                 ...getStageColor(pet.Stage),
                                 position: 'absolute',
-                                left: 10,
-                                bottom: 10,
+                                left: compactIconOffset + 2,
+                                bottom: compactIconOffset,
                                 fontWeight: 700,
                             }}
                         />
                     )}
                 </Box>
-                <CardContent sx={{ width: '100%', p: 2, opacity: isSeen ? 0.66 : 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <CardContent sx={{ width: '100%', p: contentPadding, opacity: isSeen ? 0.66 : 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: contentTitleSpacing }}>
                         <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 800, mb: 0 }}>
                             {pet.Name}
                         </Typography>
@@ -198,38 +227,42 @@ const PetCard: React.FC<PetCardProps> = ({
                         />
                     </Box>
 
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontStyle: 'italic' }}>
-                                {pet.PrimaryBreed}
-                                {pet.SecondaryBreed && ` • ${pet.SecondaryBreed}`}
-                            </Typography>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: contentSecondarySpacing, fontStyle: 'italic' }}
+                    >
+                        {pet.PrimaryBreed}
+                        {pet.SecondaryBreed && ` • ${pet.SecondaryBreed}`}
+                    </Typography>
 
-                            {matchScore === null ? null : (
-                                <Box sx={{ mb: 1 }}>
-                                    <Stack direction="row" spacing={1} alignItems="center">
-                                        <ScoreIcon color="primary" fontSize="small" />
-                                        <Typography variant="body2" fontWeight={600}>
-                                            Personal fit: {matchScore}%
-                                        </Typography>
-                                    </Stack>
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={matchScore}
-                                        sx={{
-                                            mt: 0.7,
-                                            height: 7,
-                                            borderRadius: 999,
-                                            bgcolor: 'rgba(15, 89, 2, 0.12)',
-                                            '& .MuiLinearProgress-bar': {
-                                                borderRadius: 999,
-                                            },
-                                        }}
-                                    />
-                                </Box>
-                            )}
+                    {matchScore === null ? null : (
+                        <Box sx={{ mb: compactView ? 0.5 : 1 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <ScoreIcon color="primary" fontSize="small" />
+                                <Typography variant="body2" fontWeight={600}>
+                                    Personal fit: {matchScore}%
+                                </Typography>
+                            </Stack>
+                            <LinearProgress
+                                variant="determinate"
+                                value={matchScore}
+                                sx={{
+                                    mt: compactView ? 0.5 : 0.7,
+                                    height: progressHeight,
+                                    borderRadius: 999,
+                                    bgcolor: 'rgba(15, 89, 2, 0.12)',
+                                    '& .MuiLinearProgress-bar': {
+                                        borderRadius: 999,
+                                    },
+                                }}
+                            />
+                        </Box>
+                    )}
 
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
-                                <Chip label={formatAge(pet.Age)} size="small" />
-                                <Chip
+                    <Box sx={{ display: 'flex', gap: chipStackGap, flexWrap: 'wrap', mt: chipStackMarginTop }}>
+                        <Chip label={formatAge(pet.Age)} size="small" />
+                        <Chip
                             label={pet.Location}
                             size="small"
                             variant="outlined"

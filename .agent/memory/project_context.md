@@ -15,6 +15,7 @@
 - For local-only feature persistence, keep parsing/writing in dedicated utility modules that normalize payloads before state hydration (favorites, seen history, and now search presets).
 - Keep `Filters` compact-by-default and gate lower-frequency controls behind an explicit advanced section to reduce visual density without changing callback/state contracts.
 - For pet-specific local persistence features, keep data normalization/serialization in utility modules and expose narrow hooks in `App` to scope writes by stable IDs.
+- Treat UI-density toggles as local-only preferences stored in dedicated `localStorage` keys, and hydrate them from disk on app startup to survive sessions.
 - For transient offline resilience, cache successful list/detail API responses in localStorage via dedicated utility modules, then hydrate fallback UI from cache before surfacing network errors.
 - Co-locate personal ranking controls in a dedicated settings surface (`Settings` tab) rather than listing filters to avoid conflating discovery controls with preference management.
 - Reuse modal props as a transport for persisted, per-entity UI state (for example, checklist and notes in the details modal) rather than adding global modal-local mutation logic.
@@ -44,6 +45,9 @@
 - **Topic:** Local app state import robustness
   - **Rule:** Import handlers should read uploaded files through a layered strategy (`file.text()` then `arrayBuffer` decode then `FileReader` fallback) and clear the file input in `finally`.
   - **Reason:** Keeps local export/import stable across browsers and test runtimes where a single file API may be missing, while allowing repeated imports without forcing a full component remount.
+- **Topic:** Compact list density persistence
+  - **Rule:** List-density preference must persist in `localStorage` and be included in the local-state import/export payload so users retain their preferred scan density across restarts and device migrations.
+  - **Reason:** Prevents user-visible layout drift after hydration and keeps density as a user-scoped UI setting rather than a transient tab state.
 
 ## Patterns & Recipes
 - **Topic:** Pet-local state persistence

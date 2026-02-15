@@ -13,6 +13,7 @@ import {
 
 export const LOCAL_APP_STATE_SCHEMA = 'midland-animal-shelter-local-state';
 export const LOCAL_APP_STATE_VERSION = 1;
+export const COMPACT_CARD_VIEW_STORAGE_KEY = 'shelter_compact_card_view';
 
 interface UnknownRecord {
     [key: string]: unknown;
@@ -32,6 +33,7 @@ export interface LocalAppStateData {
     favoritesDisclaimerAccepted: boolean;
     searchPresets: SearchPreset[];
     adoptionChecklists: Record<number, AdoptionChecklist>;
+    compactCardView?: boolean;
 }
 
 export interface LocalAppStateExport {
@@ -156,6 +158,7 @@ const normalizeTransferData = (value: unknown): LocalAppStateData => {
         favoritesDisclaimerAccepted: parseBoolean(value.favoritesDisclaimerAccepted),
         searchPresets: normalizeSearchPresetList(value.searchPresets),
         adoptionChecklists: normalizeAdoptionChecks(value.adoptionChecklists),
+        compactCardView: parseBoolean(value.compactCardView),
     };
 };
 

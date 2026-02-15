@@ -28,6 +28,8 @@ interface SettingsPanelProps {
     onPersonalFitPreferencesChange: (preferences: PersonalFitPreferences) => void;
     onResetPersonalFitPreferences: () => void;
     onTogglePersonalFitEnabled: () => void;
+    isCompactCardView: boolean;
+    onCompactCardViewChange: (_event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => void;
     newMatchCount: number;
     hasNewMatchHistory: boolean;
     onClearCurrentTabNewMatches: () => void;
@@ -44,6 +46,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     onPersonalFitPreferencesChange,
     onResetPersonalFitPreferences,
     onTogglePersonalFitEnabled,
+    isCompactCardView,
+    onCompactCardViewChange,
     newMatchCount,
     hasNewMatchHistory,
     onClearCurrentTabNewMatches,
@@ -122,6 +126,31 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                             {transferState.message}
                         </Alert>
                     ) : null}
+                </Stack>
+
+                <Divider />
+
+                <Stack spacing={1.2}>
+                    <Box>
+                        <Typography variant="h6">List density</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            Compact mode compresses cards and increases desktop results per page.
+                        </Typography>
+                    </Box>
+
+                    <FormControlLabel
+                        control={(
+                            <Switch
+                                checked={isCompactCardView}
+                                onChange={onCompactCardViewChange}
+                                color="primary"
+                            />
+                        )}
+                        label={isCompactCardView ? 'Compact card view enabled' : 'Compact card view'}
+                    />
+                    <Typography variant="body2" color="text.secondary">
+                        This only changes UI density and does not affect filters, sorting, or favorites.
+                    </Typography>
                 </Stack>
 
                 <Divider />

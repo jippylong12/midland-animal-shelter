@@ -17,7 +17,9 @@ import { PERSONAL_FIT_ENABLED_KEY, PERSONAL_FIT_PREFERENCES_KEY } from './utils/
 import { writeCachedPetDetails, writeCachedPetList } from './utils/offlineCache';
 import {
     buildLocalAppStateExport,
+    COMPACT_CARD_VIEW_STORAGE_KEY,
 } from './utils/localAppState';
+import * as localAppState from './utils/localAppState';
 import { FAVORITES_STORAGE_KEY, FAVORITES_DISCLAIMER_KEY } from './hooks/useFavorites';
 import { SEEN_PETS_STORAGE_KEY, SEEN_ENABLED_STORAGE_KEY } from './hooks/useSeenPets';
 
@@ -291,6 +293,7 @@ describe('App', () => {
     });
 
     it('exports local app state from Settings to a JSON file', async () => {
+        const buildPayloadSpy = vi.spyOn(localAppState, 'buildLocalAppStateExport');
         const favoritesExport = [
             {
                 ...createPet({ ID: 700, Name: 'Milo', Species: 'Dog' }),
@@ -324,6 +327,7 @@ describe('App', () => {
         localStorage.setItem(SEEN_ENABLED_STORAGE_KEY, JSON.stringify(true));
         localStorage.setItem(SEARCH_PRESET_STORAGE_KEY, JSON.stringify([preset]));
         localStorage.setItem(ADOPTION_CHECKLIST_STORAGE_KEY, JSON.stringify(checklist));
+        localStorage.setItem(COMPACT_CARD_VIEW_STORAGE_KEY, JSON.stringify(true));
 
         const createObjectURLSpy = vi.fn().mockReturnValue('blob:local-app-state');
         const revokeObjectURLSpy = vi.fn().mockImplementation(() => undefined);
@@ -332,6 +336,9 @@ describe('App', () => {
         const originalRevokeObjectURL = URL.revokeObjectURL;
         (URL as unknown as { createObjectURL: () => string }).createObjectURL = createObjectURLSpy;
         (URL as unknown as { revokeObjectURL: (objectUrl: string) => void }).revokeObjectURL = revokeObjectURLSpy;
+        createObjectURLSpy.mockImplementation(() => {
+            return 'blob:local-app-state';
+        });
 
         setLocationSearch('tab=5');
         renderApp();
@@ -341,9 +348,10 @@ describe('App', () => {
             await userEvent.click(screen.getByRole('button', { name: 'Export local app state' }));
 
             expect(createObjectURLSpy).toHaveBeenCalledTimes(1);
-            const exportedPayloadSource = createObjectURLSpy.mock.calls[0]?.[0];
-            expect(exportedPayloadSource).toBeDefined();
-            expect((exportedPayloadSource as Blob).size).toBeGreaterThan(0);
+            expect(buildPayloadSpy).toHaveBeenCalledTimes(1);
+            const exportedPayloadInput = buildPayloadSpy.mock.calls[0]?.[0];
+            expect(exportedPayloadInput?.compactCardView).toBe(true);
+            expect(exportedPayloadInput?.favorites).toHaveLength(1);
             expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:local-app-state');
 
             const exportAlerts = await screen.findAllByRole('alert');
@@ -389,6 +397,7 @@ describe('App', () => {
                     notes: 'Need a cat-proof home',
                 },
             },
+            compactCardView: false,
         });
 
         localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([]));
@@ -427,7 +436,69 @@ describe('App', () => {
         expect(checklists[701].notes).toBe('Need a cat-proof home');
         expect(localStorage.getItem(SEEN_ENABLED_STORAGE_KEY)).toBe('true');
         expect(localStorage.getItem(FAVORITES_DISCLAIMER_KEY)).toBe('true');
+        expect(localStorage.getItem(COMPACT_CARD_VIEW_STORAGE_KEY)).toBe('false');
         expect(screen.getByText('1 favorited')).toBeInTheDocument();
+    });
+
+    it('persists compact card view preference through Settings and import/export', async () => {
+        const pets = Array.from({ length: 25 }, (_, index) => (
+            createPet({
+                ID: index + 1,
+                Name: `Pet ${index + 1}`,
+                Species: 'Dog',
+                PrimaryBreed: 'Mixed Breed',
+            })
+        ));
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        setLocationSearch('tab=5');
+        renderApp();
+
+        await screen.findByRole('tab', { name: 'Settings' });
+        await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+        const compactToggle = screen.getByRole('checkbox', { name: /compact card view/i });
+        await userEvent.click(compactToggle);
+        expect(compactToggle).toBeChecked();
+        expect(localStorage.getItem(COMPACT_CARD_VIEW_STORAGE_KEY)).toBe('true');
+
+        await userEvent.click(screen.getByRole('tab', { name: 'All Pets' }));
+        expect(await screen.findByText('Pet 24')).toBeInTheDocument();
+        expect(screen.queryByText('Pet 25')).not.toBeInTheDocument();
+        const petImage = screen.getByRole('img', { name: 'Pet 1' });
+        expect(petImage).toHaveAttribute('height', '170');
+
+        const importPayload = buildLocalAppStateExport({
+            favorites: [],
+            seenPets: [],
+            seenEnabled: false,
+            favoritesDisclaimerAccepted: false,
+            searchPresets: [],
+            adoptionChecklists: {},
+            compactCardView: true,
+        });
+        const importFile = new File([JSON.stringify(importPayload)], 'state.json', {
+            type: 'application/json',
+        });
+
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([]));
+        localStorage.setItem(SEEN_PETS_STORAGE_KEY, JSON.stringify([]));
+        localStorage.setItem(SEARCH_PRESET_STORAGE_KEY, JSON.stringify([]));
+        localStorage.setItem(ADOPTION_CHECKLIST_STORAGE_KEY, JSON.stringify({}));
+        await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+        const compactToggleForImport = await screen.findByRole('checkbox', { name: /compact card view/i }) as HTMLInputElement;
+        if (compactToggleForImport.checked) {
+            await userEvent.click(compactToggleForImport);
+            expect(compactToggleForImport).not.toBeChecked();
+            expect(localStorage.getItem(COMPACT_CARD_VIEW_STORAGE_KEY)).toBe('false');
+        }
+        const importInput = screen.getByLabelText('Local app state import file') as HTMLInputElement;
+        await setInputFiles(importInput, importFile);
+        await waitFor(() => {
+            expect(localStorage.getItem(COMPACT_CARD_VIEW_STORAGE_KEY)).toBe('true');
+        });
+        expect(await screen.findByRole('checkbox', { name: /compact card view/i })).toBeChecked();
     });
 
     it('shows a validation error when importing malformed local state', async () => {

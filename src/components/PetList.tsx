@@ -21,6 +21,7 @@ interface PetListProps {
     isCompareLimitReached: boolean;
     onToggleCompare: (pet: AdoptableSearch) => void;
     getPetFitScore?: (pet: AdoptableSearch) => number | null;
+    compactView?: boolean;
 }
 
 const PetList: React.FC<PetListProps> = ({
@@ -39,7 +40,11 @@ const PetList: React.FC<PetListProps> = ({
     isCompareLimitReached,
     onToggleCompare,
     getPetFitScore,
+    compactView = false,
 }) => {
+    const listSpacing = compactView ? 1.5 : 2.5;
+    const compactGridCols = compactView ? 2 : 3;
+
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -83,11 +88,11 @@ const PetList: React.FC<PetListProps> = ({
                     </Button>
                 )}
             </Stack>
-            <Grid container spacing={2.5}>
+            <Grid container spacing={listSpacing}>
                 {pets.map((pet, index) => (
                     <Grid
                         item
-                        xs={12} sm={6} md={4} lg={3}
+                        xs={12} sm={6} md={4} lg={compactGridCols}
                         key={pet.ID}
                         sx={{
                             animation: 'fadeUp 0.5s ease-out forwards',
@@ -107,6 +112,7 @@ const PetList: React.FC<PetListProps> = ({
                             isInCompare={isInCompare(pet)}
                             isCompareLimitReached={isCompareLimitReached}
                             onToggleCompare={() => onToggleCompare(pet)}
+                            compactView={compactView}
                             matchScore={getPetFitScore ? getPetFitScore(pet) : null}
                         />
                     </Grid>

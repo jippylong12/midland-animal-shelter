@@ -79,6 +79,7 @@ import { createEmptyAdoptionChecklist } from './utils/adoptionChecklist';
 import { readCachedPetList, writeCachedPetList } from './utils/offlineCache';
 import {
     buildLocalAppStateExport,
+    COMPACT_CARD_VIEW_STORAGE_KEY,
     parseLocalAppStateImport,
 } from './utils/localAppState';
 
@@ -144,6 +145,27 @@ const getTabSpeciesLabel = (selectedTab: number): string | null => {
 
 const getTabKind = (selectedTab: number): AppTabKind | null => {
     return APP_TAB_CONFIG[selectedTab]?.kind ?? null;
+};
+
+const readCompactCardViewFromStorage = (): boolean => {
+    try {
+        const stored = localStorage.getItem(COMPACT_CARD_VIEW_STORAGE_KEY);
+        if (!stored) {
+            return false;
+        }
+
+        return JSON.parse(stored) === true;
+    } catch {
+        return false;
+    }
+};
+
+const writeCompactCardViewToStorage = (isCompactCardView: boolean) => {
+    try {
+        localStorage.setItem(COMPACT_CARD_VIEW_STORAGE_KEY, JSON.stringify(isCompactCardView));
+    } catch {
+        // LocalStorage may be unavailable in some test or privacy-restricted environments.
+    }
 };
 
 const readUploadedFileText = async (file: Blob): Promise<string> => {
@@ -311,6 +333,9 @@ function App() {
     const [isPersonalFitEnabled, setIsPersonalFitEnabled] = useState<boolean>(() => (
         readPersonalFitEnabled()
     ));
+    const [isCompactCardView, setIsCompactCardView] = useState<boolean>(() => (
+        readCompactCardViewFromStorage()
+    ));
 
     // State for pets data
     const [pets, setPets] = useState<AdoptableSearch[]>([]);
@@ -337,7 +362,7 @@ function App() {
     // Pagination States
     const [currentPage, setCurrentPage] = useState<number>(initialUrlState.currentPage);
     const isMobile = useMediaQuery('(max-width:600px)');
-    const itemsPerPage = isMobile ? 10 : 20; // Dynamically set items per page
+    const itemsPerPage = isMobile ? 10 : (isCompactCardView ? 24 : 20); // Dynamically set items per page
     const skipPageReset = useRef(true);
     const isRestoringFromUrl = useRef(false);
     const petsTabRef = useRef<number>(initialUrlState.selectedTab);
@@ -491,6 +516,10 @@ function App() {
         }
     };
 
+    const handleCompactCardViewChange = (_: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+        setIsCompactCardView(checked);
+    };
+
     const getCurrentPresetFilters = (): SearchPresetFilters => ({
         ...normalizeSearchPresetFilters({
             searchQuery,
@@ -603,6 +632,7 @@ function App() {
                 favoritesDisclaimerAccepted: isDisclaimerAccepted,
                 searchPresets,
                 adoptionChecklists: adoptionChecklistStore,
+                compactCardView: isCompactCardView,
             });
             const dateLabel = new Date().toISOString().slice(0, 10);
             const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
@@ -649,6 +679,7 @@ function App() {
             setSearchPresets(parsedState.searchPresets);
             writeSearchPresets(parsedState.searchPresets);
             replaceChecklistStore(parsedState.adoptionChecklists);
+            setIsCompactCardView(parsedState.compactCardView ?? false);
 
             setStateTransferStatus({
                 severity: 'success',
@@ -727,6 +758,10 @@ function App() {
             setSortBy('');
         }
     }, [isPersonalFitEnabled, sortBy]);
+
+    useEffect(() => {
+        writeCompactCardViewToStorage(isCompactCardView);
+    }, [isCompactCardView]);
 
     useEffect(() => {
         const onPopState = () => {
@@ -1120,6 +1155,8 @@ function App() {
                         onPersonalFitPreferencesChange={handlePersonalFitPreferencesChange}
                         onResetPersonalFitPreferences={handleResetPersonalFitPreferences}
                         onTogglePersonalFitEnabled={handlePersonalFitEnabledChange}
+                        isCompactCardView={isCompactCardView}
+                        onCompactCardViewChange={handleCompactCardViewChange}
                         onClearCurrentTabNewMatches={clearCurrentTabNewMatches}
                         onClearAllNewMatches={clearAllNewMatches}
                         hasNewMatchHistory={hasNewMatchHistory}
@@ -1192,6 +1229,7 @@ function App() {
                             isInCompare={isInCompare}
                             isCompareLimitReached={isCompareLimitReached}
                             onToggleCompare={toggleComparePet}
+                            compactView={isCompactCardView}
                             getPetFitScore={getPetFitScore}
                         />
 

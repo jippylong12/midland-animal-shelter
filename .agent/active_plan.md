@@ -1,4 +1,4 @@
-# Active Plan: FTR-L03 (Export / Import Local App State)
+# Active Plan: FTR-L04 (Compact card view toggle)
 
 ## Constraints
 - Preserve existing React + TypeScript + MUI stack.
@@ -6,9 +6,9 @@
 - Preserve existing tabs/filter/pagination behaviors.
 
 ## Plan
-1. Audit current `FTR-L03` implementation across `App.tsx`, `SettingsPanel.tsx`, and `utils/localAppState.ts` to confirm behavior and identify remaining gaps.
-2. Fix import file processing robustness in `App.tsx` so upload works even when browser/file APIs (`File.text()`) are unavailable or inconsistent in test/runtime environments.
-3. Improve App-level import/export test helper reliability and assertions in `src/App.test.tsx`, remove temporary debug output, and add/adjust cases for malformed and success paths.
-4. Keep feature behavior aligned with UX expectations in `SettingsPanel.tsx` (clear status, deterministic messaging, and visible feedback).
+1. Add compact card preference state in App-level persistence flow and include it in local-state serialization.
+2. Add a Settings control for list density and wire it to card/list rendering.
+3. Tune `PetList` and `PetCard` layout behavior for compact mode while preserving desktop default density.
+4. Extend local state parsing/write tests and App integration tests for export/import + user preference persistence.
 5. Run required validation commands in order: `npm run test`, `npm run lint`, `npm run build`.
-6. Report final status and outstanding risks.
+6. Mark FTR-L04 as shipped and update memory references for UI-density persistence behavior.

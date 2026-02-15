@@ -58,6 +58,7 @@ describe('localAppState', () => {
         expect(parsed.seenPets[0]).toEqual({ id: 101, species: 'Dog', timestamp: expect.any(Number) });
         expect(parsed.searchPresets[0].name).toBe('Rex preset');
         expect(parsed.adoptionChecklists[101]).toEqual(payload.adoptionChecklists[101]);
+        expect(parsed.compactCardView).toBe(false);
     });
 
     it('parses legacy payloads without schema metadata', () => {
@@ -69,6 +70,18 @@ describe('localAppState', () => {
         expect(parsed.seenPets).toHaveLength(1);
         expect(parsed.favoritesDisclaimerAccepted).toBe(true);
         expect(parsed.adoptionChecklists[101]).toBeDefined();
+        expect(parsed.compactCardView).toBe(false);
+    });
+
+    it('normalizes compact card-view mode from transfer payloads', () => {
+        const payload = {
+            ...buildLegacyPayload(),
+            compactCardView: 'true' as unknown as boolean,
+        };
+
+        const parsed = parseLocalAppStateImport(JSON.stringify(buildLocalAppStateExport(payload)));
+
+        expect(parsed.compactCardView).toBe(true);
     });
 
     it('filters invalid and expired state records during import', () => {
