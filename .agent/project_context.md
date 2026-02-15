@@ -35,3 +35,7 @@
 - **Topic:** Frontend regression testing baseline
 - **Rule:** Use Vitest + React Testing Library with a shared jsdom setup (`src/test/setup.ts`) that stubs `matchMedia`, clears localStorage, and resets mocks; cover core product behavior with App integration tests plus hook unit tests.
 - **Reason:** This catches regressions in fetch/tabs/filters/pagination/modal and localStorage-backed favorites/seen-history without changing runtime data flow.
+
+- **Topic:** URL-synced navigation state
+- **Rule:** Keep tab/filter/page state in query params through explicit `parse`/`build` helpers, and only re-emit to history when state is valid; restore on `popstate` with guarded pagination clamping.
+- **Reason:** It enables deep-linking and back/forward restoration for complex list filters without introducing route libraries or losing UX semantics during transient loading states.

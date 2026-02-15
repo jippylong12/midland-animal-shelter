@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { XMLParser } from 'fast-xml-parser';
 import {
@@ -43,12 +43,109 @@ const speciesIdMap: number[] = [0, 1, 2, 1003, -1];
 const getErrorMessage = (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback;
 
+type AppUrlState = {
+    selectedTab: number;
+    searchQuery: string;
+    breed: string[];
+    gender: string;
+    age: { min: string; max: string };
+    stage: string;
+    sortBy: string;
+    hideSeen: boolean;
+    currentPage: number;
+};
+
+const parseAgeFilterValue = (value: string | null) => {
+    const trimmed = value?.trim() ?? '';
+    return /^\d+$/.test(trimmed) ? trimmed : '';
+};
+
+const getUrlState = (): AppUrlState => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const rawTab = Number(searchParams.get('tab'));
+    const selectedTab = Number.isInteger(rawTab) && rawTab >= 0 && rawTab < speciesIdMap.length
+        ? rawTab
+        : 0;
+
+    const rawPage = Number(searchParams.get('page'));
+    const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+
+    const rawBreed = searchParams.get('breed') ?? '';
+    const breed = rawBreed
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean);
+
+    const rawGender = searchParams.get('gender');
+    const gender = rawGender === 'Male' || rawGender === 'Female' ? rawGender : '';
+
+    const rawSortBy = searchParams.get('sort');
+    const sortBy = rawSortBy === 'breed' || rawSortBy === 'age' ? rawSortBy : '';
+
+    const rawHideSeen = searchParams.get('hideSeen');
+    const hideSeen = rawHideSeen === 'true' || rawHideSeen === '1';
+
+    return {
+        selectedTab,
+        searchQuery: searchParams.get('q')?.trim() ?? '',
+        breed,
+        gender,
+        age: {
+            min: parseAgeFilterValue(searchParams.get('ageMin')),
+            max: parseAgeFilterValue(searchParams.get('ageMax')),
+        },
+        stage: searchParams.get('stage')?.trim() ?? '',
+        sortBy,
+        hideSeen,
+        currentPage,
+    };
+};
+
+const buildUrlSearchParams = (state: AppUrlState) => {
+    const params = new URLSearchParams();
+
+    if (state.selectedTab !== 0) {
+        params.set('tab', String(state.selectedTab));
+    }
+    if (state.searchQuery) {
+        params.set('q', state.searchQuery);
+    }
+    if (state.breed.length > 0) {
+        params.set('breed', state.breed.join(','));
+    }
+    if (state.gender) {
+        params.set('gender', state.gender);
+    }
+    if (state.age.min) {
+        params.set('ageMin', state.age.min);
+    }
+    if (state.age.max) {
+        params.set('ageMax', state.age.max);
+    }
+    if (state.stage) {
+        params.set('stage', state.stage);
+    }
+    if (state.sortBy) {
+        params.set('sort', state.sortBy);
+    }
+    if (state.hideSeen) {
+        params.set('hideSeen', 'true');
+    }
+    if (state.currentPage > 1) {
+        params.set('page', String(state.currentPage));
+    }
+
+    return params;
+};
+
 function App() {
+    const initialUrlState = getUrlState();
+
     // State for search query
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(initialUrlState.searchQuery);
 
     // State for selected tab
-    const [selectedTab, setSelectedTab] = useState<number>(0);
+    const [selectedTab, setSelectedTab] = useState<number>(initialUrlState.selectedTab);
     const tabLabels: { label: string; icon: JSX.Element }[] = [
         { label: 'All Pets', icon: <PetsIcon /> },
         { label: 'Dogs', icon: <DogIcon /> },
@@ -58,14 +155,14 @@ function App() {
     ];
 
     // States for filters
-    const [breed, setBreed] = useState<string[]>([]); // Changed to array for multi-select
-    const [gender, setGender] = useState('');
-    const [age, setAge] = useState<{ min: string; max: string }>({ min: '', max: '' }); // Changed to object for min/max
-    const [stage, setStage] = useState(''); // New state for stage
-    const [hideSeen, setHideSeen] = useState<boolean>(false);
+    const [breed, setBreed] = useState<string[]>(initialUrlState.breed); // Changed to array for multi-select
+    const [gender, setGender] = useState(initialUrlState.gender);
+    const [age, setAge] = useState<{ min: string; max: string }>(initialUrlState.age); // Changed to object for min/max
+    const [stage, setStage] = useState(initialUrlState.stage); // New state for stage
+    const [hideSeen, setHideSeen] = useState<boolean>(initialUrlState.hideSeen);
 
     // State for sorting
-    const [sortBy, setSortBy] = useState<string>(''); // '' means no sorting
+    const [sortBy, setSortBy] = useState<string>(initialUrlState.sortBy); // '' means no sorting
 
     // State for pets data
     const [pets, setPets] = useState<AdoptableSearch[]>([]);
@@ -82,9 +179,13 @@ function App() {
     const [modalError, setModalError] = useState<string | null>(null);
 
     // Pagination States
-    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [currentPage, setCurrentPage] = useState<number>(initialUrlState.currentPage);
     const isMobile = useMediaQuery('(max-width:600px)');
     const itemsPerPage = isMobile ? 10 : 20; // Dynamically set items per page
+    const skipPageReset = useRef(true);
+    const isRestoringFromUrl = useRef(false);
+    const petsTabRef = useRef<number>(initialUrlState.selectedTab);
+    const isFetchingPets = useRef(false);
 
     // Favorites Hook
     const { favorites, toggleFavorite, isFavorite, isDisclaimerOpen, acceptDisclaimer, closeDisclaimer, checkAvailability } = useFavorites();
@@ -143,16 +244,73 @@ function App() {
         setCurrentPage(page);
     };
 
+    const syncStateFromUrl = useCallback(() => {
+        const urlState = getUrlState();
+
+        isRestoringFromUrl.current = true;
+        skipPageReset.current = true;
+        setSelectedTab(urlState.selectedTab);
+        setSearchQuery(urlState.searchQuery);
+        setBreed(urlState.breed);
+        setGender(urlState.gender);
+        setAge(urlState.age);
+        setStage(urlState.stage);
+        setSortBy(urlState.sortBy);
+        setHideSeen(urlState.hideSeen);
+        setCurrentPage(urlState.currentPage);
+    }, []);
+
+    const syncUrlFromState = useCallback(() => {
+        const params = buildUrlSearchParams({
+            selectedTab,
+            searchQuery,
+            breed,
+            gender,
+            age,
+            stage,
+            sortBy,
+            hideSeen,
+            currentPage,
+        });
+        const nextSearch = params.toString();
+        const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}`;
+        window.history.replaceState(null, '', nextUrl);
+    }, [age, breed, currentPage, gender, hideSeen, searchQuery, selectedTab, sortBy, stage]);
+
     // Effect to reset current page when filters, sorting, or tab changes
     useEffect(() => {
+        if (skipPageReset.current) {
+            skipPageReset.current = false;
+            return;
+        }
+        if (isRestoringFromUrl.current) {
+            isRestoringFromUrl.current = false;
+            return;
+        }
+
         setCurrentPage(1);
     }, [searchQuery, breed, gender, age, stage, sortBy, selectedTab]);
+
+    useEffect(() => {
+        syncUrlFromState();
+    }, [syncUrlFromState]);
+
+    useEffect(() => {
+        const onPopState = () => {
+            syncStateFromUrl();
+        };
+
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+    }, [syncStateFromUrl]);
 
     // Effect to make API request based on selectedTab
     useEffect(() => {
         if (selectedTab === 4) return;
 
         const fetchPets = async () => {
+            isFetchingPets.current = true;
+            petsTabRef.current = selectedTab;
             setLoading(true); // Start loading
             setError(null); // Reset previous errors
             setPets([]); // Clear pets
@@ -195,6 +353,7 @@ function App() {
                 console.error('Error fetching pets:', err);
                 setError(getErrorMessage(err, 'Failed to fetch pets.'));
             } finally {
+                isFetchingPets.current = false;
                 setLoading(false); // End loading
             }
         };
@@ -205,6 +364,7 @@ function App() {
     // Effect to update pets when on Favorites tab
     useEffect(() => {
         if (selectedTab === 4) {
+            petsTabRef.current = 4;
             setPets(favorites);
             setLoading(false);
         }
@@ -294,6 +454,29 @@ function App() {
         currentPage * itemsPerPage
     );
 
+    useEffect(() => {
+        if (loading) {
+            return;
+        }
+        if (isFetchingPets.current) {
+            return;
+        }
+        if (isRestoringFromUrl.current) {
+            return;
+        }
+        if (petsTabRef.current !== selectedTab) {
+            return;
+        }
+        if (pets.length === 0) {
+            return;
+        }
+
+        const maxPage = Math.max(totalPages, 1);
+        if (currentPage > maxPage) {
+            setCurrentPage(maxPage);
+        }
+    }, [currentPage, loading, totalPages, pets.length, selectedTab]);
+
     // Extract unique breeds for the breed filter dropdown
     const uniqueBreedsSet = new Set<string>();
     pets.forEach((pet) => {
@@ -312,6 +495,14 @@ function App() {
         }
     });
     const uniqueStages = Array.from(uniqueStagesSet).sort();
+    const stageSelectValue = uniqueStages.length === 0 || !uniqueStages.includes(stage) ? '' : stage;
+
+    useEffect(() => {
+        if (stage && uniqueStages.length > 0 && !uniqueStages.includes(stage)) {
+            setStage('');
+        }
+    }, [stage, uniqueStages]);
+
     const hasActiveFilters =
         searchQuery.trim().length > 0 ||
         breed.length > 0 ||
@@ -368,7 +559,7 @@ function App() {
                     onGenderChange={handleGenderChange}
                     age={age}
                     onAgeChange={handleAgeChange}
-                    stage={stage}
+                    stage={stageSelectValue}
                     onStageChange={handleStageChange}
                     uniqueStages={uniqueStages}
                     sortBy={sortBy}

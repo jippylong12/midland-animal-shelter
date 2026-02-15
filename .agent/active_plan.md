@@ -1,7 +1,7 @@
-# Active Plan: Comprehensive Test Suite
+# Active Plan: Implement FTR-H01 (URL-Synced Filters + Tabs)
 
 ## Context
-- User asked for a best-effort test suite to ensure the application works end-to-end.
+- Implement deep-link state for filter and tab UI and validate with unit/integration tests.
 
 ## Constraints
 - Keep stack and patterns: React + TypeScript + MUI.
@@ -10,14 +10,13 @@
 - Validate resulting changes with the project-required checks (`npm run lint` and `npm run build`) plus tests once implemented.
 
 ## Atomic Steps
-1. Inspect current test setup and scripts in `package.json` and existing test files to identify gaps.
-   Constraint mapping: avoid changing product behavior while adding test coverage.
-2. Add or improve test tooling/config only if needed for stable, maintainable tests in the current React + TypeScript stack.
-   Constraint mapping: no alternate framework shifts, no changes to runtime feature logic.
-3. Implement high-value unit/integration tests for core user flows: fetch/render, species tabs, filters, pagination, favorites, seen-history, and modal details.
-   Constraint mapping: assert existing behavior contracts rather than redefining them.
-4. Add focused edge-case tests for critical states (loading, empty, error, persistence boundaries) where practical.
-   Constraint mapping: keep tests aligned with current UI behavior and messaging.
-5. Run verification commands and fix test failures caused by test code changes.
-   Constraint mapping: keep app buildable and lint-clean.
-6. Run Sentinel constraint audit and update durable project memory via Chronicler and Historian.
+1. Add URL parse/build utilities for tab and filter states in `src/App.tsx`.
+   Constraint mapping: keep tab/filter defaults identical when params are absent or invalid.
+2. Initialize app state from `window.location.search` and keep tab/filter/page in sync with `history.replaceState`.
+   Constraint mapping: no behavior changes outside query-managed state; preserve reset-on-tab-change behavior.
+3. Add `popstate` hydration so browser back/forward restores filters, tab, and page.
+   Constraint mapping: avoid introducing route libraries; keep SPA client-only state flow.
+4. Add integration tests in `src/App.test.tsx` for deep-link hydration, state persistence in URL, and `popstate` restoration.
+   Constraint mapping: keep test assertions anchored to current UI controls/behavior.
+5. Run verification commands (`npm run test`, `npm run lint`, `npm run build`) and capture outcomes.
+6. Update project memory records (Sentinel/Chronicler/Historian) to reflect the feature decision and implementation outcome.

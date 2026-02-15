@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from '@mui/material/styles';
+import { act } from 'react';
 import App from './App';
 import theme from './theme';
 import { buildDetailsXml, buildSearchXml, createPet, createPetDetails } from './test/fixtures';
@@ -19,7 +20,16 @@ const renderApp = () =>
         </ThemeProvider>
     );
 
+const setLocationSearch = (search = '') => {
+    const normalized = search ? `/?${search}` : '/';
+    window.history.replaceState({}, '', normalized);
+};
+
 describe('App', () => {
+    beforeEach(() => {
+        setLocationSearch('');
+    });
+
     it('loads pets and applies the search filter', async () => {
         const pets = buildSearchXml([
             createPet({ ID: 1, Name: 'Rex', PrimaryBreed: 'Labrador Retriever', Species: 'Dog' }),
@@ -43,6 +53,37 @@ describe('App', () => {
 
         await userEvent.click(screen.getByRole('button', { name: 'Clear Filters' }));
         await screen.findByText('Rex');
+    });
+
+    it('hydrates tab/filter/page state from query params', async () => {
+        const dogs = Array.from({ length: 60 }, (_, index) =>
+            createPet({
+                ID: index + 1,
+                Name: `Buddy ${index + 1}`,
+                Species: 'Dog',
+                PrimaryBreed: 'Labrador Retriever',
+                Sex: 'Female',
+                Stage: 'Available',
+                Age: 12,
+            })
+        );
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(dogs)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        setLocationSearch('tab=1&q=buddy&breed=Labrador%20Retriever&gender=Female&ageMin=1&ageMax=3&stage=Available&sort=age&hideSeen=true&page=3');
+        renderApp();
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('speciesID=1'));
+        });
+
+        expect(window.location.search).toContain('page=3');
+        expect(await screen.findByText('Buddy 41')).toBeInTheDocument();
+        expect(screen.queryByText('Buddy 1')).not.toBeInTheDocument();
+        expect((screen.getByRole('textbox', { name: 'Search by name or breed' }) as HTMLInputElement).value).toBe('buddy');
+        expect(screen.getByRole('tab', { name: 'Dogs' })).toHaveAttribute('aria-selected', 'true');
+        expect((screen.getByLabelText('Min age (yrs)') as HTMLInputElement).value).toBe('1');
+        expect((screen.getByLabelText('Max age (yrs)') as HTMLInputElement).value).toBe('3');
     });
 
     it('switches species tabs and requests the correct endpoint', async () => {
@@ -80,12 +121,12 @@ describe('App', () => {
 
         renderApp();
         await screen.findByText('Pet 1');
-        expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+        expect(screen.getByText('Pet 1')).toBeInTheDocument();
         expect(screen.queryByText('Pet 21')).not.toBeInTheDocument();
 
         await userEvent.click(screen.getByRole('button', { name: 'Go to page 2' }));
 
-        await screen.findByText('Page 2 of 2');
+        expect(await screen.findByText('Pet 21')).toBeInTheDocument();
         expect(screen.getByText('Pet 21')).toBeInTheDocument();
     });
 
@@ -118,7 +159,7 @@ describe('App', () => {
         await waitFor(() => {
             expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('animalID=77'));
         });
-        expect(await screen.findByRole('link', { name: 'Adopt Ranger' })).toBeInTheDocument();
+        expect(await screen.findByRole('link', { name: /adopt ranger/i })).toBeInTheDocument();
     });
 
     it('shows a request error when the pet list fetch fails', async () => {
@@ -128,5 +169,109 @@ describe('App', () => {
         renderApp();
 
         expect(await screen.findByText('HTTP error! status: 500')).toBeInTheDocument();
+    });
+
+    it('keeps URL query in sync when filters and pagination change', async () => {
+        const dogs = Array.from({ length: 60 }, (_, index) =>
+            createPet({
+                ID: index + 1,
+                Name: `Buddy ${index + 1}`,
+                Species: 'Dog',
+                PrimaryBreed: 'Labrador Retriever',
+            })
+        );
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(toResponse(buildSearchXml(dogs)))
+            .mockResolvedValueOnce(toResponse(buildSearchXml(dogs)))
+            .mockResolvedValueOnce(toResponse(buildSearchXml(dogs)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        setLocationSearch('q=buddy');
+        renderApp();
+        await screen.findByText('Buddy 1');
+
+        await userEvent.click(screen.getByRole('tab', { name: 'Dogs' }));
+        expect(await screen.findByText('Buddy 1')).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', { name: /go to page 2/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText('Buddy 21')).toBeInTheDocument();
+        });
+        expect(window.location.search).toContain('tab=1');
+        expect(window.location.search).toContain('q=buddy');
+        expect(window.location.search).toContain('page=2');
+    });
+
+    it('re-hydrates tab and filters on browser back/forward navigation', async () => {
+        const initialPets = Array.from({ length: 20 }, (_, index) =>
+            createPet({
+                ID: index + 1,
+                Name: `Rex ${index + 1}`,
+                Species: index % 2 === 0 ? 'Dog' : 'Cat',
+            })
+        );
+        const catPets = Array.from({ length: 25 }, (_, index) =>
+            createPet({
+                ID: 100 + index + 1,
+                Name: `Cat ${index + 1}`,
+                Species: 'Cat',
+                Sex: 'Female',
+                PrimaryBreed: 'Tabby',
+                Stage: 'Available',
+                Age: 180,
+            })
+        );
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(toResponse(buildSearchXml(initialPets)))
+            .mockResolvedValueOnce(toResponse(buildSearchXml(catPets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        setLocationSearch('');
+        renderApp();
+        await screen.findByText('Rex 1');
+
+        window.history.pushState({}, '', '/?tab=2&q=cat&gender=Female&ageMin=12&ageMax=20&stage=Available&sort=breed&page=2');
+        act(() => {
+            window.dispatchEvent(new PopStateEvent('popstate'));
+        });
+
+        await waitFor(() => {
+            expect(screen.getByRole('tab', { name: 'Cats' })).toHaveAttribute('aria-selected', 'true');
+        });
+        expect((screen.getByRole('textbox', { name: 'Search by name or breed' }) as HTMLInputElement).value).toBe('cat');
+        expect(screen.getByRole('combobox', { name: 'Gender' })).toHaveTextContent('Female');
+        expect((screen.getByLabelText('Min age (yrs)') as HTMLInputElement).value).toBe('12');
+        expect((screen.getByLabelText('Max age (yrs)') as HTMLInputElement).value).toBe('20');
+        expect(window.location.search).toContain('page=2');
+        expect(await screen.findByText('Cat 21')).toBeInTheDocument();
+        expect(screen.queryByText('Cat 1')).not.toBeInTheDocument();
+        expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('speciesID=2'));
+    });
+
+    it('falls back to safe defaults for invalid query params', async () => {
+        const dogs = Array.from({ length: 2 }, (_, index) =>
+            createPet({
+                ID: index + 1,
+                Name: `Dog ${index + 1}`,
+                Species: 'Dog',
+                PrimaryBreed: 'Bulldog',
+            })
+        );
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(dogs)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        setLocationSearch('tab=99&q=dog&ageMin=invalid&sort=weird&hideSeen=maybe&page=-1');
+        renderApp();
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('speciesID=0'));
+        });
+        expect(screen.getByRole('tab', { name: 'All Pets' })).toHaveAttribute('aria-selected', 'true');
+        expect((screen.getByRole('textbox', { name: 'Search by name or breed' }) as HTMLInputElement).value).toBe('dog');
+        expect((screen.getByLabelText('Min age (yrs)') as HTMLInputElement).value).toBe('');
+        expect((screen.getByLabelText('Max age (yrs)') as HTMLInputElement).value).toBe('');
+        expect(window.location.search).not.toContain('sort=');
+        expect(window.location.search).not.toMatch('page=');
     });
 });
