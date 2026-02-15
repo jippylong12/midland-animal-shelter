@@ -1,28 +1,30 @@
 ## Status
-- Completed on 2026-02-15.
+- Completed.
 
-# Active Plan: Implement FTR-H02 (New-Match Detection since Last Visit)
+# Active Plan: Implement FTR-H04 (Data freshness and stale-data banner)
 
 ## Context
-- Implement localStorage-backed new-match highlighting per species without changing API contracts or current core list behavior.
+- Implement `FTR-H04` from `docs/FEATURES_FUTURE.md`: show last successful sync time and clear stale-state messaging without changing API contract.
 
 ## Constraints
-- Keep stack and patterns: React + TypeScript + MUI.
-- Preserve current behavior flows: API fetch, tabs, filters, pagination, favorites, seen-history, disclaimer messaging, modal details.
-- Maintain responsive behavior and avoid global state replacements for UI changes.
-- Use local client state only (SPA-contained), per roadmap constraints.
-- Validate changes with `npm run lint` and `npm run build` plus tests before completion.
+- Keep React + TypeScript + MUI only.
+- Preserve current core behavior: API fetch, tabs, filters, pagination, favorites, seen history, modal details, and disclaimer.
+- Maintain mobile/desktop responsiveness and existing tab/filter/query-state patterns.
+- Use SPA-only client persistence (`localStorage`) and no backend/API contract changes.
+- Validate with `npm run lint`, `npm run build`, and targeted test suite(s).
 
 ## Atomic Steps
-1. Inspect current pet list rendering and card component to determine how to mark "seen" and inject new-match state.
-   Constraint mapping: do not change API parsing contracts or tab/filter/pagination logic.
-2. Add a localStorage snapshot model keyed by species to persist last seen pet identifiers and timestamps for each species.
-   Constraint mapping: robust parsing/versioning to avoid stale/invalid localStorage data and false new-match positives.
-3. On successful data fetch, compare current pet IDs against stored snapshots and derive `isNewMatch` for current list items; include species-aware handling for mixed data ordering.
-   Constraint mapping: avoid regressions in existing filtering/pagination and keep deterministic output for the same input.
-4. Add a visible UI indicator for new pets and a reset control that clears persisted match history per species/global while keeping existing reset patterns.
-   Constraint mapping: maintain MUI styling patterns and mobile-first responsive behavior.
-5. Add tests for storage parsing, new-match computation, and end-to-end behavior in existing test suites.
-   Constraint mapping: follow existing test conventions and shared setup (`src/test/setup.ts`).
-6. Update `docs/FEATURES_FUTURE.md` status fields for `FTR-H02` and record decisions in project memory files per mandatory workflow.
-7. Run verification commands (`npm run test`, `npm run lint`, `npm run build`) and report results.
+1. Add a client-side freshness tracker with per-tab timestamp persistence in `localStorage`.
+   - Constraint mapping: no API contract changes; existing fetch pipeline remains intact.
+2. Update app fetch flow to capture `Date.now()` only on successful list fetches and hydrate banner state from storage.
+   - Constraint mapping: keep current data loading/error behavior stable.
+3. Add stale detection logic with configurable interval threshold and clear stale-state messaging text.
+   - Constraint mapping: avoid changing data schema or requiring server state.
+4. Add a reusable freshness display component (banner/alert) and integrate it in app layout.
+   - Constraint mapping: preserve MUI styling direction and existing layout hierarchy.
+5. Extend `App.test.tsx` and add utility tests (if needed) to validate:
+   - timestamp persistence across reloads,
+   - stale threshold messaging,
+   - and successful sync updates.
+6. Update `docs/FEATURES_FUTURE.md` for `FTR-H04` status/date/notes.
+7. Run `npm run lint`, `npm run build`, and `npm run test` for impacted suites.

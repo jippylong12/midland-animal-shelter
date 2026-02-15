@@ -13,6 +13,8 @@ import {
     useMediaQuery,
     Box,
     Container,
+    Alert,
+    AlertTitle,
     Paper,
     Stack,
     Typography,
@@ -46,6 +48,14 @@ import {
     readNewMatchStorage,
     writeNewMatchStorage,
 } from './utils/newMatchTracker';
+import {
+    formatSyncAge,
+    formatSyncTime,
+    getSyncTimestampForTab,
+    isDataStale,
+    readPetListSyncState,
+    writePetListSyncState,
+} from './utils/dataFreshness';
 
 const parser = new XMLParser();
 const speciesIdMap: number[] = [0, 1, 2, 1003, -1];
@@ -186,6 +196,7 @@ function App() {
     // State for loading and error
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [syncState, setSyncState] = useState<Record<number, number>>({});
 
     // State for Modal
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -393,6 +404,7 @@ function App() {
     useEffect(() => {
         const initialStore = readNewMatchStorage();
         setHasNewMatchHistory(Object.keys(initialStore).length > 0);
+        setSyncState(readPetListSyncState());
     }, []);
 
     // Effect to make API request based on selectedTab
@@ -442,9 +454,19 @@ function App() {
 
                 const previousStore = readNewMatchStorage();
                 const { newMatchIds, nextStore } = computeNewMatches(adoptableSearchList, previousStore);
+                const now = Date.now();
+
                 setNewMatchPetIds(newMatchIds);
                 writeNewMatchStorage(nextStore);
                 setHasNewMatchHistory(Object.keys(nextStore).length > 0);
+                setSyncState((prev) => {
+                    const nextState = {
+                        ...prev,
+                        [selectedTab]: now,
+                    };
+                    writePetListSyncState(nextState);
+                    return nextState;
+                });
                 setPets(adoptableSearchList);
             } catch (err: unknown) {
                 console.error('Error fetching pets:', err);
@@ -616,6 +638,15 @@ function App() {
         Boolean(age.max) ||
         Boolean(sortBy) ||
         hideSeen;
+
+    const lastSyncAt = getSyncTimestampForTab(syncState, selectedTab);
+    const syncAgeLabel = formatSyncAge(lastSyncAt);
+    const freshnessMessage = lastSyncAt
+        ? `Last successful sync for ${tabLabels[selectedTab].label} was ${formatSyncTime(lastSyncAt)} (${syncAgeLabel}).`
+        : `No successful sync has been recorded yet for ${tabLabels[selectedTab].label}.`;
+    const isSyncStale = Boolean(lastSyncAt) && isDataStale(lastSyncAt);
+    const isDataFreshnessBannerVisible = selectedTab !== 4;
+
     const modalComparePet = getPetFromModalData(modalData);
     const isCurrentPetInCompare = modalComparePet ? isInCompare(modalComparePet) : false;
     const canAddCurrentPetToCompare = !isCompareLimitReached || isCurrentPetInCompare;
@@ -656,6 +687,22 @@ function App() {
                         </Stack>
                     </Stack>
                 </Paper>
+
+                {isDataFreshnessBannerVisible && (
+                    <Alert
+                        severity={isSyncStale ? 'warning' : 'info'}
+                        variant="outlined"
+                        sx={{ mb: 2 }}
+                    >
+                        <AlertTitle>Data freshness</AlertTitle>
+                        {freshnessMessage}
+                        {isSyncStale ? (
+                            <>
+                                Data may be stale due to delayed API responses. Consider refreshing for the latest list.
+                            </>
+                        ) : null}
+                    </Alert>
+                )}
 
                 <Filters
                     searchQuery={searchQuery}

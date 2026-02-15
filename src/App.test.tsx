@@ -6,6 +6,7 @@ import App from './App';
 import theme from './theme';
 import { buildDetailsXml, buildSearchXml, createPet, createPetDetails } from './test/fixtures';
 import { NEW_MATCH_STORAGE_KEY } from './utils/newMatchTracker';
+import { DATA_FRESHNESS_KEY } from './utils/dataFreshness';
 
 const toResponse = (body: string, status = 200): Response =>
     ({
@@ -85,6 +86,36 @@ describe('App', () => {
         expect(screen.getByRole('tab', { name: 'Dogs' })).toHaveAttribute('aria-selected', 'true');
         expect((screen.getByLabelText('Min age (yrs)') as HTMLInputElement).value).toBe('1');
         expect((screen.getByLabelText('Max age (yrs)') as HTMLInputElement).value).toBe('3');
+    });
+
+    it('stores last successful pet fetch time by tab and displays freshness message', async () => {
+        const pets = [createPet({ ID: 1, Name: 'Rex', Species: 'Dog' })];
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Rex');
+
+        expect(screen.getByText(/Data freshness/i)).toBeInTheDocument();
+        expect(screen.getByText(/Last successful sync for All Pets was/i)).toBeInTheDocument();
+        expect(screen.queryByText(/Data may be stale due to delayed API responses/i)).not.toBeInTheDocument();
+
+        const stored = JSON.parse(localStorage.getItem(DATA_FRESHNESS_KEY) || '{}');
+        expect(typeof stored).toBe('object');
+        expect(stored[0]).toBeGreaterThan(0);
+        expect(stored[0]).toBeLessThanOrEqual(Date.now());
+    });
+
+    it('warns when cached sync data is stale', async () => {
+        const staleTimestamp = Date.now() - (16 * 60 * 1000);
+        localStorage.setItem(DATA_FRESHNESS_KEY, JSON.stringify({ 0: staleTimestamp }));
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse('server-error', 500));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        expect(await screen.findByText('HTTP error! status: 500')).toBeInTheDocument();
+        expect(screen.getByText(/Data may be stale due to delayed API responses/i)).toBeInTheDocument();
     });
 
     it('highlights pets that are new since the last snapshot', async () => {

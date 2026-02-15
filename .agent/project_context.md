@@ -42,3 +42,6 @@
 - **Topic:** New-match detection without API contract changes
 - **Rule:** Store previous visible species snapshots in localStorage using normalized keys (`species|id`) and update snapshots after each successful list fetch.
 - **Reason:** This allows “new since last visit” highlighting and reset semantics entirely on the client while preventing accidental mismatches from case/spelling variations.
+- **Topic:** Data freshness without API contract changes
+- **Rule:** Persist last-successful sync timestamps in localStorage per tab (tab index keys) and display fresh/stale banners derived from those values.
+- **Reason:** This keeps API contracts untouched while surfacing trust signals for delayed/stale list data.

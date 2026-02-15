@@ -21,7 +21,7 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 | FTR-H01 | URL-synced filters and tab state (deep links) | Users can share exact search states and return where they left off, reducing repeated filtering effort. | Shipped | Engineering | v1.10 | 2026-02-15 | Keep all state in query params; preserve existing filter behavior. |
 | FTR-H02 | New-match detection since last visit | Highlights newly listed pets per species, helping repeat visitors focus on fresh options quickly. | Shipped | Engineering | v1.10 | 2026-02-15 | Store last seen pet IDs/timestamps in localStorage; reset controls in UI. |
 | FTR-H03 | Compare up to 3 pets side-by-side | Improves adoption decisions by reducing modal back-and-forth and making tradeoffs visible at once. | Shipped | Engineering | v1.11 | 2026-02-15 | Client-side compare tray with card/list side-by-side layout, favorites + seen markers, and card/modal compare actions. |
-| FTR-H04 | Data freshness and stale-data banner | Builds trust during API delays by showing last successful sync time and clear stale-state messaging. | Backlog | Unassigned | v1.11 |  | Track fetch timestamp in state/localStorage; no API contract changes. |
+| FTR-H04 | Data freshness and stale-data banner | Builds trust during API delays by showing last successful sync time and clear stale-state messaging. | Shipped | Engineering | v1.11 | 2026-02-15 | Track fetch timestamp per tab in state/localStorage, and add stale-data banner with human-readable sync age. |
 
 ## Medium
 

@@ -166,24 +166,28 @@ const PetModal: React.FC<PetModalProps> = ({
                         </IconButton>
                     )}
                     {modalData && (
-                        <IconButton
-                            onClick={() => {
-                                petFromModal && toggleFavorite(petFromModal);
-                            }}
-                            sx={{ color: isFavorite(modalData.ID) ? '#FFD700' : 'action.active' }}
-                        >
-                            {isFavorite(modalData.ID) ? <StarIcon /> : <StarBorderIcon />}
-                        </IconButton>
+                            <IconButton
+                                onClick={() => {
+                                    if (petFromModal) {
+                                        toggleFavorite(petFromModal);
+                                    }
+                                }}
+                                sx={{ color: isFavorite(modalData.ID) ? '#FFD700' : 'action.active' }}
+                            >
+                                {isFavorite(modalData.ID) ? <StarIcon /> : <StarBorderIcon />}
+                            </IconButton>
                     )}
                     {modalData && isSeenEnabled && (
-                        <IconButton
-                            onClick={() => {
-                                petFromModal && markAsSeen(petFromModal);
-                            }}
-                            sx={{ color: petFromModal && isSeen(petFromModal) ? 'primary.main' : 'action.active' }}
-                        >
-                            <VisibilityIcon />
-                        </IconButton>
+                            <IconButton
+                                onClick={() => {
+                                    if (petFromModal) {
+                                        markAsSeen(petFromModal);
+                                    }
+                                }}
+                                sx={{ color: petFromModal && isSeen(petFromModal) ? 'primary.main' : 'action.active' }}
+                            >
+                                <VisibilityIcon />
+                            </IconButton>
                     )}
                 </Box>
                 <Button onClick={onClose} color="inherit" variant="outlined">Close</Button>
@@ -211,10 +215,6 @@ const PetModal: React.FC<PetModalProps> = ({
                                         boxShadow: 2,
                                         objectFit: 'cover',
                                         maxHeight: 400,
-                                        cursor: 'pointer',
-                                    }}
-                                    onClick={() => {
-                                        // Optional: Open lightbox or larger view
                                     }}
                                 />
 
