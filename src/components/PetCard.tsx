@@ -10,6 +10,7 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
 import { AdoptableSearch } from '../types';
 import { getStageColor } from '../theme';
+import { OFFLINE_IMAGE_FALLBACK } from '../utils/imageFallback';
 
 interface PetCardProps {
     pet: AdoptableSearch;
@@ -55,11 +56,11 @@ const PetCard: React.FC<PetCardProps> = ({
                 <CardMedia
                         component="img"
                         height="230"
-                        image={pet.Photo || '/placeholder.png'}
+                        image={pet.Photo || OFFLINE_IMAGE_FALLBACK}
                         alt={pet.Name}
                         onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                             e.currentTarget.onerror = null;
-                            e.currentTarget.src = '/placeholder.png';
+                            e.currentTarget.src = OFFLINE_IMAGE_FALLBACK;
                         }}
                         sx={{ objectFit: 'cover', filter: isSeen ? 'grayscale(18%) saturate(0.8)' : 'none' }}
                     />

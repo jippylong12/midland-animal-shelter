@@ -36,6 +36,7 @@ import {
     AdoptionChecklist,
     AdoptionChecklistItemId,
 } from '../utils/adoptionChecklist';
+import { readCachedPetDetails, writeCachedPetDetails } from '../utils/offlineCache';
 
 interface PetModalProps {
     isOpen: boolean;
@@ -101,6 +102,7 @@ const PetModal: React.FC<PetModalProps> = ({
 
     const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
     const [isChecklistOpen, setIsChecklistOpen] = React.useState(false);
+    const [isOfflineDetailMode, setIsOfflineDetailMode] = React.useState(false);
 
     const titleId = 'pet-details-title';
 
@@ -111,6 +113,10 @@ const PetModal: React.FC<PetModalProps> = ({
     }, [modalData]);
 
     useEffect(() => {
+        if (!isOpen) {
+            setIsOfflineDetailMode(false);
+        }
+
         if (!isOpen) {
             setIsChecklistOpen(false);
         }
@@ -134,8 +140,18 @@ const PetModal: React.FC<PetModalProps> = ({
                 const data = await response.text();
                 const xmlData = parser.parse(data) as AdoptableDetailsXmlNode;
                 setModalData(xmlData.adoptableDetails);
+                writeCachedPetDetails(xmlData.adoptableDetails);
+                setIsOfflineDetailMode(false);
             } catch (err: unknown) {
                 console.error('Error fetching detailed pet data:', err);
+                const cachedDetails = readCachedPetDetails(animalID);
+                if (cachedDetails) {
+                    setModalData(cachedDetails.details);
+                    setIsOfflineDetailMode(true);
+                    setModalError(null);
+                    return;
+                }
+
                 setModalError(getErrorMessage(err, 'Failed to fetch detailed pet data.'));
             } finally {
                 setModalLoading(false);
@@ -255,6 +271,11 @@ const PetModal: React.FC<PetModalProps> = ({
                 </Button>
             </DialogTitle>
             <DialogContent dividers>
+                {isOfflineDetailMode ? (
+                    <Typography variant="caption" color="warning.main" sx={{ display: 'block', mb: 1.5 }}>
+                        Offline mode: showing cached pet details.
+                    </Typography>
+                ) : null}
                 {modalLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', padding: 4 }}>
                         <CircularProgress />

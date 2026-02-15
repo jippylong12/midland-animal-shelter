@@ -64,6 +64,7 @@ import {
     writeSearchPresets,
 } from './utils/searchPresets';
 import { createEmptyAdoptionChecklist } from './utils/adoptionChecklist';
+import { readCachedPetList, writeCachedPetList } from './utils/offlineCache';
 
 const parser = new XMLParser();
 const speciesIdMap: number[] = [0, 1, 2, 1003, -1];
@@ -205,6 +206,7 @@ function App() {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [syncState, setSyncState] = useState<Record<number, number>>({});
+    const [isOfflineListMode, setIsOfflineListMode] = useState<boolean>(false);
 
     const [searchPresets, setSearchPresets] = useState<SearchPreset[]>(() => readSearchPresets());
 
@@ -281,6 +283,7 @@ function App() {
         setAge({ min: '', max: '' });
         setStage('');
         setSortBy(''); // Reset sorting
+        setIsOfflineListMode(false);
     };
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -418,6 +421,7 @@ function App() {
         isRestoringFromUrl.current = true;
         skipPageReset.current = true;
         setSelectedTab(urlState.selectedTab);
+        setIsOfflineListMode(false);
         setSearchQuery(urlState.searchQuery);
         setBreed(urlState.breed);
         setGender(urlState.gender);
@@ -489,6 +493,7 @@ function App() {
             setError(null); // Reset previous errors
             setPets([]); // Clear pets
             setNewMatchPetIds(new Set());
+            setIsOfflineListMode(false);
             try {
                 const speciesID = speciesIdMap[selectedTab];
                 const response = await fetch(
@@ -530,6 +535,7 @@ function App() {
                 setNewMatchPetIds(newMatchIds);
                 writeNewMatchStorage(nextStore);
                 setHasNewMatchHistory(Object.keys(nextStore).length > 0);
+                writeCachedPetList(selectedTab, speciesID, adoptableSearchList);
                 setSyncState((prev) => {
                     const nextState = {
                         ...prev,
@@ -541,6 +547,25 @@ function App() {
                 setPets(adoptableSearchList);
             } catch (err: unknown) {
                 console.error('Error fetching pets:', err);
+                const cachedList = readCachedPetList(selectedTab);
+                if (cachedList) {
+                    const fallbackStore = readNewMatchStorage();
+                    const { newMatchIds } = computeNewMatches(cachedList.pets, fallbackStore);
+                    setIsOfflineListMode(true);
+                    setNewMatchPetIds(newMatchIds);
+                    setHasNewMatchHistory(Object.keys(fallbackStore).length > 0);
+                    setSyncState((prev) => {
+                        const nextState = {
+                            ...prev,
+                            [selectedTab]: cachedList.timestamp,
+                        };
+                        writePetListSyncState(nextState);
+                        return nextState;
+                    });
+                    setPets(cachedList.pets);
+                    return;
+                }
+
                 setError(getErrorMessage(err, 'Failed to fetch pets.'));
             } finally {
                 isFetchingPets.current = false;
@@ -727,8 +752,12 @@ function App() {
     const lastSyncAt = getSyncTimestampForTab(syncState, selectedTab);
     const syncAgeLabel = formatSyncAge(lastSyncAt);
     const freshnessMessage = lastSyncAt
-        ? `Last successful sync for ${tabLabels[selectedTab].label} was ${formatSyncTime(lastSyncAt)} (${syncAgeLabel}).`
-        : `No successful sync has been recorded yet for ${tabLabels[selectedTab].label}.`;
+        ? isOfflineListMode
+            ? `Showing cached ${tabLabels[selectedTab].label.toLowerCase()} data from ${formatSyncTime(lastSyncAt)} (${syncAgeLabel}).`
+            : `Last successful sync for ${tabLabels[selectedTab].label} was ${formatSyncTime(lastSyncAt)} (${syncAgeLabel}).`
+        : isOfflineListMode
+            ? 'Showing cached data with no available sync timestamp yet.'
+            : `No successful sync has been recorded yet for ${tabLabels[selectedTab].label}.`;
     const isSyncStale = Boolean(lastSyncAt) && isDataStale(lastSyncAt);
     const isDataFreshnessFooterVisible = selectedTab !== 4;
 
@@ -771,6 +800,13 @@ function App() {
                             <Chip variant="outlined" label={`${favorites.length} favorited`} />
                             <Chip variant="outlined" label={`${seenPets.length} seen`} />
                             <Chip variant="outlined" label={`${comparePets.length}/3 to compare`} />
+                            {isOfflineListMode ? (
+                                <Chip
+                                    color="warning"
+                                    variant="outlined"
+                                    label="Offline: cached list"
+                                />
+                            ) : null}
                         </Stack>
                     </Stack>
                 </Paper>
@@ -842,6 +878,7 @@ function App() {
                 showDataFreshness={isDataFreshnessFooterVisible}
                 freshnessText={freshnessMessage}
                 isFreshnessStale={isSyncStale}
+                isOfflineData={isOfflineListMode}
             />
 
             <PetModal

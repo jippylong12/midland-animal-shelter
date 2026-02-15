@@ -9,6 +9,7 @@ import { NEW_MATCH_STORAGE_KEY } from './utils/newMatchTracker';
 import { DATA_FRESHNESS_KEY } from './utils/dataFreshness';
 import { SEARCH_PRESET_STORAGE_KEY } from './utils/searchPresets';
 import { ADOPTION_CHECKLIST_STORAGE_KEY } from './utils/adoptionChecklist';
+import { writeCachedPetDetails, writeCachedPetList } from './utils/offlineCache';
 
 const toResponse = (body: string, status = 200): Response =>
     ({
@@ -176,6 +177,55 @@ describe('App', () => {
         renderApp();
         expect(await screen.findByText('HTTP error! status: 500')).toBeInTheDocument();
         expect(screen.getByText(/Data may be stale due to delayed API responses/i)).toBeInTheDocument();
+    });
+
+    it('uses cached pets when the list request fails', async () => {
+        const cachedPets = [
+            createPet({ ID: 101, Name: 'Cachey', Species: 'Dog', Stage: 'Available' }),
+        ];
+        writeCachedPetList(0, 0, cachedPets);
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse('server-error', 500));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+
+        expect(await screen.findByText('Cachey')).toBeInTheDocument();
+        expect(screen.queryByText('HTTP error! status: 500')).not.toBeInTheDocument();
+        expect(screen.getByText(/Offline: cached list/i)).toBeInTheDocument();
+        expect(screen.getByText(/Showing cached.*all pets/i)).toBeInTheDocument();
+    });
+
+    it('shows cached details when detail fetch fails', async () => {
+        const searchXml = buildSearchXml([
+            createPet({ ID: 77, Name: 'Ranger', Species: 'Dog', PrimaryBreed: 'Shepherd' }),
+        ]);
+        const details = createPetDetails({
+            ID: 77,
+            AnimalName: 'Ranger',
+            Species: 'Dog',
+            PrimaryBreed: 'Shepherd',
+            Stage: 'Available',
+            AdoptionApplicationUrl: 'https://example.com/adopt/ranger',
+        });
+        writeCachedPetDetails(details);
+
+        const fetchMock = vi.fn((url: string) => {
+            if (url.includes('speciesID=')) {
+                return Promise.resolve(toResponse(searchXml));
+            }
+
+            return Promise.resolve(toResponse('server-error', 500));
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Ranger');
+
+        await userEvent.click(screen.getByText('Ranger'));
+
+        expect(await screen.findByText(/offline mode: showing cached pet details/i)).toBeInTheDocument();
+        expect(await screen.findByRole('link', { name: /adopt ranger/i })).toBeInTheDocument();
     });
 
     it('highlights pets that are new since the last snapshot', async () => {

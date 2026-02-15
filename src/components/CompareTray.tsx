@@ -15,6 +15,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import StarIcon from '@mui/icons-material/Star';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { AdoptableSearch } from '../types';
+import { OFFLINE_IMAGE_FALLBACK } from '../utils/imageFallback';
 
 interface CompareTrayProps {
     comparePets: AdoptableSearch[];
@@ -78,11 +79,11 @@ const CompareTray: React.FC<CompareTrayProps> = ({
                                 <CardMedia
                                     component="img"
                                     height="140"
-                                    image={pet.Photo || '/placeholder.png'}
+                                    image={pet.Photo || OFFLINE_IMAGE_FALLBACK}
                                     alt={pet.Name}
                                     onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
                                         e.currentTarget.onerror = null;
-                                        e.currentTarget.src = '/placeholder.png';
+                                        e.currentTarget.src = OFFLINE_IMAGE_FALLBACK;
                                     }}
                                 />
                                 <CardContent>

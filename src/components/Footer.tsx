@@ -8,12 +8,14 @@ type FooterProps = {
     showDataFreshness?: boolean;
     freshnessText?: string;
     isFreshnessStale?: boolean;
+    isOfflineData?: boolean;
 };
 
 const Footer: React.FC<FooterProps> = ({
     showDataFreshness = false,
     freshnessText,
     isFreshnessStale = false,
+    isOfflineData = false,
 }) => (
     <Box
         id="disclaimer"
@@ -38,6 +40,11 @@ const Footer: React.FC<FooterProps> = ({
                         {isFreshnessStale ? (
                             <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 0.4 }}>
                                 Data may be stale due to delayed API responses.
+                            </Typography>
+                        ) : null}
+                        {isOfflineData ? (
+                            <Typography variant="caption" color="warning.main" sx={{ display: 'block', mt: 0.4 }}>
+                                Offline mode: browsing cached list data in read-only mode.
                             </Typography>
                         ) : null}
                     </Box>

@@ -62,3 +62,7 @@
 - **Topic:** Accessibility for icon-only controls and modal focus
 - **Rule:** Require explicit `aria-label` on icon-only actions and stable focus-return behavior for modal dialogs (capture trigger element on open, restore focus to trigger on close).
 - **Reason:** This keeps modal and card interactions usable by keyboard and assistive technologies without changing existing app behavior or state flow.
+
+- **Topic:** Offline resilience for list/detail views
+- **Rule:** Keep offline fallback client-side by caching last successful pet list and detail payloads in `localStorage`, validating schemas during read/write, and preferring cached data on fetch failure while surfacing explicit read-only indicators.
+- **Reason:** This preserves core browsing and modal behavior during transient network failures while retaining trust signals and preventing malformed payloads from polluting UI state.
