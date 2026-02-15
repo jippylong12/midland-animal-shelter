@@ -8,6 +8,7 @@ import { buildDetailsXml, buildSearchXml, createPet, createPetDetails } from './
 import { NEW_MATCH_STORAGE_KEY } from './utils/newMatchTracker';
 import { DATA_FRESHNESS_KEY } from './utils/dataFreshness';
 import { SEARCH_PRESET_STORAGE_KEY } from './utils/searchPresets';
+import { ADOPTION_CHECKLIST_STORAGE_KEY } from './utils/adoptionChecklist';
 
 const toResponse = (body: string, status = 200): Response =>
     ({
@@ -70,6 +71,7 @@ describe('App', () => {
         renderApp();
         await screen.findByText('Bella');
 
+        await userEvent.click(screen.getByRole('button', { name: 'Show Advanced Filters' }));
         await userEvent.type(screen.getByRole('textbox', { name: 'Search by name or breed' }), 'bella');
         await userEvent.type(screen.getByLabelText('Preset name'), 'My Dogs');
         await userEvent.click(screen.getByRole('button', { name: 'Save Search Preset' }));
@@ -104,6 +106,7 @@ describe('App', () => {
         renderApp();
         await screen.findByText('Bella');
 
+        await userEvent.click(screen.getByRole('button', { name: 'Show Advanced Filters' }));
         await userEvent.type(screen.getByLabelText('Preset name'), 'Delete Me');
         await userEvent.click(screen.getByRole('button', { name: 'Save Search Preset' }));
         await screen.findByText('Delete Me');
@@ -220,6 +223,7 @@ describe('App', () => {
         await screen.findByText('Luna');
         expect(screen.getAllByText('NEW')).toHaveLength(1);
 
+        await userEvent.click(screen.getByRole('button', { name: 'Show Advanced Filters' }));
         await userEvent.click(screen.getByRole('button', { name: /clear new matches/i }));
         await waitFor(() => {
             expect(screen.queryByText('NEW')).not.toBeInTheDocument();
@@ -379,6 +383,57 @@ describe('App', () => {
             expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('animalID=77'));
         });
         expect(await screen.findByRole('link', { name: /adopt ranger/i })).toBeInTheDocument();
+    });
+
+    it('persists checklist and notes for a pet in the modal', async () => {
+        const searchXml = buildSearchXml([
+            createPet({ ID: 77, Name: 'Ranger', Species: 'Dog', PrimaryBreed: 'Shepherd' }),
+        ]);
+        const detailsXml = buildDetailsXml(
+            createPetDetails({
+                ID: 77,
+                AnimalName: 'Ranger',
+                Species: 'Dog',
+                PrimaryBreed: 'Shepherd',
+                Stage: 'Available',
+                AdoptionApplicationUrl: 'https://example.com/adopt/ranger',
+            })
+        );
+        const fetchMock = vi.fn((url: string) => {
+            if (url.includes('speciesID=')) {
+                return Promise.resolve(toResponse(searchXml));
+            }
+            return Promise.resolve(toResponse(detailsXml));
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Ranger');
+        await userEvent.click(screen.getByText('Ranger'));
+
+        await userEvent.click(await screen.findByRole('button', { name: 'Adoption Checklist' }));
+        const childrenCheck = await screen.findByRole('checkbox', { name: 'Good with children' });
+        const notes = await screen.findByLabelText('Household Notes');
+
+        await userEvent.click(childrenCheck);
+        await userEvent.type(notes, 'Needs a fenced yard.');
+
+        const rawStored = localStorage.getItem(ADOPTION_CHECKLIST_STORAGE_KEY);
+        expect(rawStored).not.toBeNull();
+        const stored = rawStored ? JSON.parse(rawStored) : {};
+        expect(stored[77].items).toEqual({
+            good_with_children: true,
+            good_with_other_pets: false,
+            energy_level_fit: false,
+        });
+        expect(stored[77].notes).toBe('Needs a fenced yard.');
+
+        await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+        await userEvent.click(screen.getByText('Ranger'));
+
+        await userEvent.click(await screen.findByRole('button', { name: 'Adoption Checklist' }));
+        expect(await screen.findByRole('checkbox', { name: 'Good with children' })).toBeChecked();
+        expect((await screen.findByLabelText('Household Notes') as HTMLTextAreaElement).value).toBe('Needs a fenced yard.');
     });
 
     it('shows a request error when the pet list fetch fails', async () => {

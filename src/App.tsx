@@ -37,6 +37,7 @@ import DisclaimerDialog from './components/DisclaimerDialog';
 import CompareTray from './components/CompareTray';
 import { useFavorites } from './hooks/useFavorites';
 import { useSeenPets } from './hooks/useSeenPets';
+import { useAdoptionChecklist } from './hooks/useAdoptionChecklist';
 import {
     clearSpeciesNewMatchHistory,
     computeNewMatches,
@@ -62,6 +63,7 @@ import {
     normalizeSearchPresetFilters,
     writeSearchPresets,
 } from './utils/searchPresets';
+import { createEmptyAdoptionChecklist } from './utils/adoptionChecklist';
 
 const parser = new XMLParser();
 const speciesIdMap: number[] = [0, 1, 2, 1003, -1];
@@ -228,6 +230,7 @@ function App() {
 
     // Seen Pets Hook
     const { seenPets, isSeenEnabled, toggleSeenFeature, markAsSeen, markAllAsSeen, isSeen } = useSeenPets();
+    const { getChecklistForPet, setChecklistItem, setChecklistNotes } = useAdoptionChecklist();
 
     const isCompareLimitReached = comparePets.length >= MAX_COMPARE_PETS;
     const isInCompare = useCallback((pet: AdoptableSearch) => {
@@ -717,6 +720,8 @@ function App() {
     const modalComparePet = getPetFromModalData(modalData);
     const isCurrentPetInCompare = modalComparePet ? isInCompare(modalComparePet) : false;
     const canAddCurrentPetToCompare = !isCompareLimitReached || isCurrentPetInCompare;
+    const modalChecklistPetId = modalData?.ID ?? selectedAnimalID;
+    const modalChecklist = modalChecklistPetId === null ? createEmptyAdoptionChecklist() : getChecklistForPet(modalChecklistPetId);
 
     return (
         <Box className="App" sx={{ flexGrow: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -842,6 +847,15 @@ function App() {
                 isInCompare={isCurrentPetInCompare}
                 canAddCompare={canAddCurrentPetToCompare}
                 onToggleCompare={toggleComparePet}
+                checklist={modalChecklist}
+                onChecklistItemChange={(itemId, checked) => {
+                    if (modalChecklistPetId === null) return;
+                    setChecklistItem(modalChecklistPetId, itemId, checked);
+                }}
+                onChecklistNotesChange={(notes) => {
+                    if (modalChecklistPetId === null) return;
+                    setChecklistNotes(modalChecklistPetId, notes);
+                }}
             />
 
             <DisclaimerDialog open={isDisclaimerOpen} onAccept={acceptDisclaimer} onClose={closeDisclaimer} />

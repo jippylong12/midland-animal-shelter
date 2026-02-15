@@ -1,24 +1,27 @@
-## Status
-- In progress.
-- Refactor `src/components/Filters.tsx` to reduce layout complexity with a compact default view and expandable advanced controls.
+# Active Plan: Implement FTR-M02
 
-# Active Plan: Refactor Filters UI Density
+## Status
+- Completed.
+- Implement `FTR-M02` (Adoption checklist and notes per pet) with localStorage persistence and test coverage.
 
 ## Context
-- User asked to make `Filters.tsx` less large/ungainly and suggested a compact + advanced approach.
+- FTR-M02 in `docs/FEATURES_FUTURE.md` asks for an adoption checklist and notes, persisted on the client and tied by pet ID.
+- Must remain frontend-only and keep the API contract unchanged.
+- Align with `.agent/project_context.md` constraints.
 
 ## Constraints
 - Keep React + TypeScript + MUI only.
-- Preserve existing core behaviors: filter operations, preset save/apply/delete, seen-history disclaimer flow, and clear actions.
-- Maintain mobile/desktop responsiveness.
-- Avoid API contract or parent prop changes for this UI-only refactor.
+- Preserve existing core behaviors: tabs, filters, pagination, favorites, seen, compare, URL state, and modal actions.
+- Keep persistence local-only using browser storage and robust normalization on read.
+- Maintain mobile/desktop responsiveness and existing accessibility patterns.
 
 ## Atomic Steps
-1. Identify high-frequency controls for a compact default section.
-- Constraint mapping: keep current filters functional and easy to access on mobile and desktop.
-2. Move lower-frequency controls/actions into an expandable advanced section (`Collapse`) controlled within `Filters.tsx`.
-- Constraint mapping: preserve behavior and callback wiring without changing `FiltersProps`.
-3. Keep preset and seen-history behaviors intact while reorganizing JSX into clearer grouped sections.
-- Constraint mapping: do not remove consent/disclaimer messaging or existing local feature semantics.
-4. Ensure labels, button text, and section headers make the compact/advanced split discoverable.
-- Constraint mapping: preserve accessibility and current MUI interaction patterns.
+1. Add a normalized checklist model and persistence helpers in `src/utils/adoptionChecklist.ts` using existing localStorage resilience patterns.
+- Constraint mapping: no API contract changes and safe handling of malformed payloads.
+2. Add `src/hooks/useAdoptionChecklist.ts` to hydrate, mutate, and persist checklist entries by pet ID.
+- Constraint mapping: avoid global-state migration and keep local data flow close to `App`.
+3. Wire checklist UI into `PetModal` and integrate callbacks through `App.tsx`.
+- Constraint mapping: keep existing modal behavior for favorites/seen/compare and no API contract changes.
+4. Add test coverage for hook persistence and modal checklist/notes UX flow.
+- Constraint mapping: extend existing Vitest and React Testing Library suites.
+5. Update `docs/FEATURES_FUTURE.md` with shipped status and verify `npm run test` + `npm run lint` + `npm run build`.

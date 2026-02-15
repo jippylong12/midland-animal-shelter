@@ -6,23 +6,36 @@ import {
     DialogTitle,
     DialogContent,
     DialogContentText,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
     Button,
     CircularProgress,
     Typography,
     Link,
     Grid,
+    Stack,
     Box,
     Chip,
     IconButton,
+    Checkbox,
+    FormControlLabel,
+    TextField,
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { AdoptableDetails, AdoptableDetailsXmlNode, AdoptableSearch } from '../types';
 import { XMLParser } from 'fast-xml-parser';
 import { getStageColor } from '../theme';
+import {
+    ADOPTION_CHECKLIST_ITEMS,
+    AdoptionChecklist,
+    AdoptionChecklistItemId,
+} from '../utils/adoptionChecklist';
 
 interface PetModalProps {
     isOpen: boolean;
@@ -42,6 +55,9 @@ interface PetModalProps {
     isInCompare: boolean;
     canAddCompare: boolean;
     onToggleCompare: (pet: AdoptableSearch) => void;
+    checklist: AdoptionChecklist;
+    onChecklistItemChange: (itemId: AdoptionChecklistItemId, isChecked: boolean) => void;
+    onChecklistNotesChange: (notes: string) => void;
 }
 
 const parser = new XMLParser();
@@ -78,15 +94,26 @@ const PetModal: React.FC<PetModalProps> = ({
     isInCompare,
     canAddCompare,
     onToggleCompare,
+    checklist,
+    onChecklistItemChange,
+    onChecklistNotesChange,
 }) => {
 
     const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
+    const [isChecklistOpen, setIsChecklistOpen] = React.useState(false);
 
     useEffect(() => {
         if (modalData?.Photo1) {
             setSelectedImage(modalData.Photo1);
         }
     }, [modalData]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setIsChecklistOpen(false);
+        }
+    }, [isOpen]);
+
     useEffect(() => {
         const fetchPetDetails = async () => {
             if (animalID === null) return;
@@ -310,6 +337,45 @@ const PetModal: React.FC<PetModalProps> = ({
                                         </Typography>
                                     </Box>
                                 )}
+
+                                <Accordion
+                                    expanded={isChecklistOpen}
+                                    onChange={(_, expanded) => setIsChecklistOpen(expanded)}
+                                    sx={{ mt: 2 }}
+                                >
+                                    <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="adoption-checklist-content">
+                                        <Typography variant="subtitle1" color="text.secondary" sx={{ fontWeight: 700 }}>
+                                            Adoption Checklist
+                                        </Typography>
+                                    </AccordionSummary>
+                                    <AccordionDetails sx={{ pt: 2 }}>
+                                        <Stack spacing={0.75} sx={{ pl: 0.5 }}>
+                                            {ADOPTION_CHECKLIST_ITEMS.map((checklistItem) => (
+                                                <FormControlLabel
+                                                    key={checklistItem.id}
+                                                    control={(
+                                                        <Checkbox
+                                                            checked={checklist.items[checklistItem.id as AdoptionChecklistItemId]}
+                                                            onChange={(event) => onChecklistItemChange(checklistItem.id as AdoptionChecklistItemId, event.target.checked)}
+                                                        />
+                                                    )}
+                                                    label={checklistItem.label}
+                                                />
+                                            ))}
+                                        </Stack>
+
+                                        <TextField
+                                            label="Household Notes"
+                                            multiline
+                                            minRows={4}
+                                            maxRows={8}
+                                            fullWidth
+                                            value={checklist.notes}
+                                            onChange={(event) => onChecklistNotesChange(event.target.value)}
+                                            sx={{ mt: 2 }}
+                                        />
+                                    </AccordionDetails>
+                                </Accordion>
                             </Box>
 
                             {/* Adoption Link */}

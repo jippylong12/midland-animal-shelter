@@ -14,6 +14,8 @@
 - For non-critical trust signals, prefer pushing informational copy to `Footer` instead of inline page alerts when the requirement is to reduce visual prominence.
 - For local-only feature persistence, keep parsing/writing in dedicated utility modules that normalize payloads before state hydration (favorites, seen history, and now search presets).
 - Keep `Filters` compact-by-default and gate lower-frequency controls behind an explicit advanced section to reduce visual density without changing callback/state contracts.
+- For pet-specific local persistence features, keep data normalization/serialization in utility modules and expose narrow hooks in `App` to scope writes by stable IDs.
+- Reuse modal props as a transport for persisted, per-entity UI state (for example, checklist and notes in the details modal) rather than adding global modal-local mutation logic.
 
 ## Gotchas
 - After adding new `@mui/icons-material` imports during dev, Vite may need a restart to avoid stale optimized dependency warnings/errors.
@@ -22,3 +24,9 @@
 - Keep test fixtures aligned to the COMAPI XML shapes (`ArrayOfXmlNode/XmlNode/adoptableSearch` for lists and `adoptableDetails` for modal details).
 - Stale warnings should only be shown when a valid sync timestamp exists and exceeds the freshness threshold; treat missing history as “no sync yet” for informational messaging.
 - Preset data in localStorage should be treated as untrusted: normalize filter values (including gender/sort/breed/age values) on read so malformed records cannot break the filters UI.
+- When a localStorage-backed hook performs sequential updates in one event, prefer functional `setState` updates to avoid stale closure merges that can overwrite earlier mutations.
+
+## Patterns & Recipes
+- **Topic:** Pet-local state persistence
+  - **Rule:** Store mutable per-entity UI states (e.g., checklist, notes) in `localStorage` by numeric entity ID with strict normalization on read/write.
+  - **Reason:** This prevents malformed payloads from polluting runtime state and lets modal state survive tab/popup reopen while keeping UI logic localized.
