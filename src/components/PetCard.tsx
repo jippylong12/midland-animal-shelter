@@ -6,6 +6,8 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
 import { AdoptableSearch } from '../types';
 import { getStageColor } from '../theme';
 interface PetCardProps {
@@ -17,6 +19,9 @@ interface PetCardProps {
     onMarkAsSeen: () => void;
     isSeen: boolean;
     isNewMatch: boolean;
+    isInCompare: boolean;
+    isCompareLimitReached: boolean;
+    onToggleCompare: () => void;
 }
 
 const PetCard: React.FC<PetCardProps> = ({
@@ -28,6 +33,9 @@ const PetCard: React.FC<PetCardProps> = ({
     onMarkAsSeen,
     isSeen,
     isNewMatch,
+    isInCompare,
+    isCompareLimitReached,
+    onToggleCompare,
 }) => {
 
     const formatAge = (age: number): string => {
@@ -43,7 +51,7 @@ const PetCard: React.FC<PetCardProps> = ({
         <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <CardActionArea component="div" onClick={onClick} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'stretch', cursor: 'pointer' }}>
                 <Box sx={{ position: 'relative', width: '100%' }}>
-                    <CardMedia
+                <CardMedia
                         component="img"
                         height="230"
                         image={pet.Photo || '/placeholder.png'}
@@ -77,28 +85,49 @@ const PetCard: React.FC<PetCardProps> = ({
                     </IconButton>
 
                     {isSeenEnabled && (
+                        <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <IconButton
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    onMarkAsSeen();
+                                }}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                sx={{
+                                    color: isSeen ? 'rgba(255, 255, 255, 0.8)' : 'white',
+                                    backgroundColor: 'rgba(26, 42, 29, 0.36)',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(26, 42, 29, 0.58)',
+                                    },
+                                }}
+                            >
+                                <VisibilityIcon />
+                            </IconButton>
+                        </Box>
+                    )}
+
+                    <Box sx={{ position: 'absolute', top: isSeenEnabled ? 58 : 8, left: 8, zIndex: 10, display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <IconButton
                             onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                onMarkAsSeen();
+                                onToggleCompare();
                             }}
                             onMouseDown={(e) => e.stopPropagation()}
+                            disabled={isCompareLimitReached && !isInCompare}
                             sx={{
-                                position: 'absolute',
-                                top: 8,
-                                left: 8,
-                                color: isSeen ? 'rgba(255, 255, 255, 0.8)' : 'white',
-                                backgroundColor: 'rgba(26, 42, 29, 0.36)',
+                                color: isInCompare ? 'secondary.main' : 'white',
+                                backgroundColor: isInCompare ? 'rgba(201, 111, 22, 0.24)' : 'rgba(26, 42, 29, 0.36)',
                                 '&:hover': {
-                                    backgroundColor: 'rgba(26, 42, 29, 0.58)',
+                                    backgroundColor: isInCompare ? 'rgba(201, 111, 22, 0.36)' : 'rgba(26, 42, 29, 0.58)',
                                 },
                                 zIndex: 10,
                             }}
+                            aria-label={isInCompare ? `Remove ${pet.Name} from compare` : `Add ${pet.Name} to compare`}
                         >
-                            <VisibilityIcon />
+                            {isInCompare ? <LibraryAddCheckIcon /> : <CompareArrowsIcon />}
                         </IconButton>
-                    )}
+                    </Box>
 
                     {isNewMatch && (
                         <Chip

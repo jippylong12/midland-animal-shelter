@@ -17,6 +17,9 @@ interface PetListProps {
     markAllAsSeen: (pets: AdoptableSearch[]) => void;
     isSeen: (pet: AdoptableSearch) => boolean;
     isNewMatch: (pet: AdoptableSearch) => boolean;
+    isInCompare: (pet: AdoptableSearch) => boolean;
+    isCompareLimitReached: boolean;
+    onToggleCompare: (pet: AdoptableSearch) => void;
 }
 
 const PetList: React.FC<PetListProps> = ({
@@ -31,6 +34,9 @@ const PetList: React.FC<PetListProps> = ({
     markAllAsSeen,
     isSeen,
     isNewMatch,
+    isInCompare,
+    isCompareLimitReached,
+    onToggleCompare,
 }) => {
     if (loading) {
         return (
@@ -96,6 +102,9 @@ const PetList: React.FC<PetListProps> = ({
                             onMarkAsSeen={() => markAsSeen(pet)}
                             isSeen={isSeen(pet)}
                             isNewMatch={isNewMatch(pet)}
+                            isInCompare={isInCompare(pet)}
+                            isCompareLimitReached={isCompareLimitReached}
+                            onToggleCompare={() => onToggleCompare(pet)}
                         />
                     </Grid>
                 ))}

@@ -34,6 +34,7 @@ import PetModal from './components/PetModal';
 import Footer from './components/Footer';
 import PaginationControls from './components/PaginationControls';
 import DisclaimerDialog from './components/DisclaimerDialog';
+import CompareTray from './components/CompareTray';
 import { useFavorites } from './hooks/useFavorites';
 import { useSeenPets } from './hooks/useSeenPets';
 import {
@@ -48,9 +49,13 @@ import {
 
 const parser = new XMLParser();
 const speciesIdMap: number[] = [0, 1, 2, 1003, -1];
+const MAX_COMPARE_PETS = 3;
 
 const getErrorMessage = (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback;
+
+const getComparePetKey = (pet: Pick<AdoptableSearch, 'Species' | 'ID'>) =>
+    `${pet.Species.toLowerCase()}|${pet.ID}`;
 
 type AppUrlState = {
     selectedTab: number;
@@ -188,6 +193,7 @@ function App() {
     const [modalData, setModalData] = useState<AdoptableDetails | null>(null);
     const [modalLoading, setModalLoading] = useState<boolean>(false);
     const [modalError, setModalError] = useState<string | null>(null);
+    const [comparePets, setComparePets] = useState<AdoptableSearch[]>([]);
 
     // Pagination States
     const [currentPage, setCurrentPage] = useState<number>(initialUrlState.currentPage);
@@ -203,6 +209,45 @@ function App() {
 
     // Seen Pets Hook
     const { seenPets, isSeenEnabled, toggleSeenFeature, markAsSeen, markAllAsSeen, isSeen } = useSeenPets();
+
+    const isCompareLimitReached = comparePets.length >= MAX_COMPARE_PETS;
+    const isInCompare = useCallback((pet: AdoptableSearch) => {
+        const targetKey = getComparePetKey(pet);
+        return comparePets.some((comparePet) => getComparePetKey(comparePet) === targetKey);
+    }, [comparePets]);
+
+    const toggleComparePet = useCallback((pet: AdoptableSearch) => {
+        setComparePets((prev) => {
+            const targetKey = getComparePetKey(pet);
+            const currentIndex = prev.findIndex((comparePet) => getComparePetKey(comparePet) === targetKey);
+
+            if (currentIndex >= 0) {
+                return prev.filter((_, index) => index !== currentIndex);
+            }
+
+            if (prev.length >= MAX_COMPARE_PETS) {
+                return prev;
+            }
+
+            return [...prev, pet];
+        });
+    }, []);
+
+    const removeComparePet = useCallback((pet: AdoptableSearch) => {
+        const targetKey = getComparePetKey(pet);
+        setComparePets((prev) => prev.filter((comparePet) => getComparePetKey(comparePet) !== targetKey));
+    }, []);
+
+    const clearComparePets = useCallback(() => setComparePets([]), []);
+
+    const getPetFromModalData = useCallback((details: AdoptableDetails | null) => {
+        if (!details) return null;
+        return {
+            ...(details as unknown as AdoptableSearch),
+            Name: details.AnimalName,
+            Photo: details.Photo1,
+        };
+    }, []);
 
     // Handler functions
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -571,6 +616,9 @@ function App() {
         Boolean(age.max) ||
         Boolean(sortBy) ||
         hideSeen;
+    const modalComparePet = getPetFromModalData(modalData);
+    const isCurrentPetInCompare = modalComparePet ? isInCompare(modalComparePet) : false;
+    const canAddCurrentPetToCompare = !isCompareLimitReached || isCurrentPetInCompare;
 
     return (
         <Box className="App" sx={{ flexGrow: 1, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -604,6 +652,7 @@ function App() {
                             <Chip color="primary" label={`${sortedPets.length} results`} />
                             <Chip variant="outlined" label={`${favorites.length} favorited`} />
                             <Chip variant="outlined" label={`${seenPets.length} seen`} />
+                            <Chip variant="outlined" label={`${comparePets.length}/3 to compare`} />
                         </Stack>
                     </Stack>
                 </Paper>
@@ -635,6 +684,18 @@ function App() {
                     onClearAllNewMatches={clearAllNewMatches}
                 />
 
+                {comparePets.length > 0 && (
+                    <CompareTray
+                        comparePets={comparePets}
+                        onOpenPet={openModal}
+                        onRemovePet={removeComparePet}
+                        onClearAll={clearComparePets}
+                        isFavorite={isFavorite}
+                        isSeen={isSeen}
+                        isCompareLimitReached={isCompareLimitReached}
+                    />
+                )}
+
                 <PetList
                     pets={paginatedPets}
                     loading={loading}
@@ -647,6 +708,9 @@ function App() {
                     markAllAsSeen={markAllAsSeen}
                     isSeen={isSeen}
                     isNewMatch={isNewMatchPet}
+                    isInCompare={isInCompare}
+                    isCompareLimitReached={isCompareLimitReached}
+                    onToggleCompare={toggleComparePet}
                 />
 
                 <PaginationControls totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} />
@@ -669,6 +733,9 @@ function App() {
                 isSeenEnabled={isSeenEnabled}
                 markAsSeen={markAsSeen}
                 isSeen={isSeen}
+                isInCompare={isCurrentPetInCompare}
+                canAddCompare={canAddCurrentPetToCompare}
+                onToggleCompare={toggleComparePet}
             />
 
             <DisclaimerDialog open={isDisclaimerOpen} onAccept={acceptDisclaimer} onClose={closeDisclaimer} />

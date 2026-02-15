@@ -18,6 +18,8 @@ import {
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
 import { AdoptableDetails, AdoptableDetailsXmlNode, AdoptableSearch } from '../types';
 import { XMLParser } from 'fast-xml-parser';
 import { getStageColor } from '../theme';
@@ -37,6 +39,9 @@ interface PetModalProps {
     isSeenEnabled: boolean;
     markAsSeen: (pet: AdoptableSearch) => void;
     isSeen: (pet: AdoptableSearch) => boolean;
+    isInCompare: boolean;
+    canAddCompare: boolean;
+    onToggleCompare: (pet: AdoptableSearch) => void;
 }
 
 const parser = new XMLParser();
@@ -70,6 +75,9 @@ const PetModal: React.FC<PetModalProps> = ({
     isSeenEnabled,
     markAsSeen,
     isSeen,
+    isInCompare,
+    canAddCompare,
+    onToggleCompare,
 }) => {
 
     const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
@@ -119,6 +127,12 @@ const PetModal: React.FC<PetModalProps> = ({
         return `${years} Year${years !== 1 ? 's' : ''}${months > 0 ? ` and ${months} Month${months !== 1 ? 's' : ''}` : ''}`;
     };
 
+    const petFromModal = modalData ? {
+        ...modalData,
+        Name: modalData.AnimalName,
+        Photo: modalData.Photo1,
+    } as unknown as AdoptableSearch : null;
+
     return (
         <Dialog
             open={isOpen}
@@ -143,13 +157,18 @@ const PetModal: React.FC<PetModalProps> = ({
                     </Typography>
                     {modalData && (
                         <IconButton
+                            onClick={() => petFromModal && onToggleCompare(petFromModal)}
+                            disabled={Boolean(petFromModal) && !isInCompare && !canAddCompare}
+                            aria-label={petFromModal ? `${isInCompare ? 'Remove' : 'Add'} ${petFromModal.Name} from compare` : 'Compare this pet'}
+                            sx={{ color: isInCompare ? 'secondary.main' : 'action.active' }}
+                        >
+                            {isInCompare ? <LibraryAddCheckIcon /> : <CompareArrowsIcon />}
+                        </IconButton>
+                    )}
+                    {modalData && (
+                        <IconButton
                             onClick={() => {
-                                const petSearch = {
-                                    ...modalData,
-                                    Name: modalData.AnimalName,
-                                    Photo: modalData.Photo1,
-                                } as unknown as AdoptableSearch;
-                                toggleFavorite(petSearch);
+                                petFromModal && toggleFavorite(petFromModal);
                             }}
                             sx={{ color: isFavorite(modalData.ID) ? '#FFD700' : 'action.active' }}
                         >
@@ -159,14 +178,9 @@ const PetModal: React.FC<PetModalProps> = ({
                     {modalData && isSeenEnabled && (
                         <IconButton
                             onClick={() => {
-                                const petSearch = {
-                                    ...modalData,
-                                    Name: modalData.AnimalName,
-                                    Photo: modalData.Photo1,
-                                } as unknown as AdoptableSearch;
-                                markAsSeen(petSearch);
+                                petFromModal && markAsSeen(petFromModal);
                             }}
-                            sx={{ color: isSeen(modalData as unknown as AdoptableSearch) ? 'primary.main' : 'action.active' }}
+                            sx={{ color: petFromModal && isSeen(petFromModal) ? 'primary.main' : 'action.active' }}
                         >
                             <VisibilityIcon />
                         </IconButton>

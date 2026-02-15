@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ThemeProvider } from '@mui/material/styles';
 import { act } from 'react';
@@ -139,6 +139,82 @@ describe('App', () => {
 
         const stored = JSON.parse(localStorage.getItem(NEW_MATCH_STORAGE_KEY) || '{}');
         expect(stored.dog.ids.sort()).toEqual(['1', '2']);
+    });
+
+    it('adds and removes pets from the compare tray', async () => {
+        const pets = [
+            createPet({ ID: 1, Name: 'Rex', Species: 'Dog' }),
+            createPet({ ID: 2, Name: 'Luna', Species: 'Dog' }),
+        ];
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Rex');
+
+        await userEvent.click(screen.getByRole('button', { name: 'Add Rex to compare' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Add Luna to compare' }));
+
+        const compareTray = screen.getByRole('region', { name: /compare tray/i });
+        expect(within(compareTray).getByText('Rex')).toBeInTheDocument();
+        expect(within(compareTray).getByText('Luna')).toBeInTheDocument();
+
+        await userEvent.click(within(compareTray).getByRole('button', { name: 'Remove Rex from compare' }));
+
+        await waitFor(() => {
+            expect(within(compareTray).queryByText('Rex')).not.toBeInTheDocument();
+        });
+    });
+
+    it('limits compare tray selections to three pets', async () => {
+        const pets = [
+            createPet({ ID: 1, Name: 'Rex', Species: 'Dog' }),
+            createPet({ ID: 2, Name: 'Luna', Species: 'Dog' }),
+            createPet({ ID: 3, Name: 'Milo', Species: 'Dog' }),
+            createPet({ ID: 4, Name: 'Max', Species: 'Dog' }),
+        ];
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Rex');
+
+        await userEvent.click(screen.getByRole('button', { name: 'Add Rex to compare' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Add Luna to compare' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Add Milo to compare' }));
+
+        const compareTray = screen.getByRole('region', { name: /compare tray/i });
+        expect(within(compareTray).getByText(/3\/3/)).toBeInTheDocument();
+
+        expect(screen.getByRole('button', { name: 'Add Max to compare' })).toBeDisabled();
+
+        await userEvent.click(within(compareTray).getByRole('button', { name: 'Remove Rex from compare' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Add Max to compare' }));
+
+        expect(within(compareTray).getByText('Max')).toBeInTheDocument();
+    });
+
+    it('shows compare markers for favorites and seen pets', async () => {
+        const now = Date.now();
+        const favorites = { ...createPet({ ID: 12, Name: 'Mochi', Species: 'Dog' }), savedAt: now };
+        const seen = [{ id: 12, species: 'Dog', timestamp: now }];
+
+        localStorage.setItem('shelter_favorites_disclaimer', 'true');
+        localStorage.setItem('shelter_favorites', JSON.stringify([favorites]));
+        localStorage.setItem('seenPetsEnabled', JSON.stringify(true));
+        localStorage.setItem('seenPets', JSON.stringify(seen));
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml([favorites])));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Mochi');
+
+        await userEvent.click(screen.getByRole('button', { name: 'Add Mochi to compare' }));
+
+        const compareTray = screen.getByRole('region', { name: /compare tray/i });
+        expect(within(compareTray).getByText('Favorite')).toBeInTheDocument();
+        expect(within(compareTray).getByText('Seen')).toBeInTheDocument();
     });
 
     it('switches species tabs and requests the correct endpoint', async () => {

@@ -7,11 +7,11 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 | Metric | Value |
 |---|---:|
 | Total backlog items | 12 |
-| Backlog | 10 |
+| Backlog | 9 |
 | Planned | 0 |
 | In Progress | 0 |
 | Blocked | 0 |
-| Shipped | 2 |
+| Shipped | 3 |
 | Dropped | 0 |
 
 ## High
@@ -20,7 +20,7 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 |---|---|---|---|---|---|---|---|
 | FTR-H01 | URL-synced filters and tab state (deep links) | Users can share exact search states and return where they left off, reducing repeated filtering effort. | Shipped | Engineering | v1.10 | 2026-02-15 | Keep all state in query params; preserve existing filter behavior. |
 | FTR-H02 | New-match detection since last visit | Highlights newly listed pets per species, helping repeat visitors focus on fresh options quickly. | Shipped | Engineering | v1.10 | 2026-02-15 | Store last seen pet IDs/timestamps in localStorage; reset controls in UI. |
-| FTR-H03 | Compare up to 3 pets side-by-side | Improves adoption decisions by reducing modal back-and-forth and making tradeoffs visible at once. | Backlog | Unassigned | v1.11 |  | Client-only compare tray; supports favorites and seen markers. |
+| FTR-H03 | Compare up to 3 pets side-by-side | Improves adoption decisions by reducing modal back-and-forth and making tradeoffs visible at once. | Shipped | Engineering | v1.11 | 2026-02-15 | Client-side compare tray with card/list side-by-side layout, favorites + seen markers, and card/modal compare actions. |
 | FTR-H04 | Data freshness and stale-data banner | Builds trust during API delays by showing last successful sync time and clear stale-state messaging. | Backlog | Unassigned | v1.11 |  | Track fetch timestamp in state/localStorage; no API contract changes. |
 
 ## Medium
@@ -43,12 +43,12 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 
 ## Top 3 next items
 
-1. **FTR-H03 Compare up to 3 pets side-by-side**
-   - Dependency: shared field mapping between list cards and detailed modal data.
-   - Risk: responsive layout complexity on small screens if too many columns are shown.
-2. **FTR-M01 Saved search presets (local only)**
+1. **FTR-M01 Saved search presets (local only)**
    - Dependency: define a lightweight and backward compatible preset schema.
    - Risk: stale/invalid presets corrupting future visits if shape changes.
-3. **FTR-M02 Accessibility upgrade pass (keyboard + focus + SR labels)**
+2. **FTR-M02 Accessibility upgrade pass (keyboard + focus + SR labels)**
    - Dependency: inventory icon-only controls and modal focus traps.
-   - Risk: false confidence on partially covered edge cases without full screen-reader pass.
+   - Risk: inconsistent accessibility patterns across existing icon actions.
+3. **FTR-M03 Adoption checklist and notes per pet**
+   - Dependency: consistent data model for pet-specific notes fields.
+   - Risk: notes fields diverging from current card and modal expectations.
