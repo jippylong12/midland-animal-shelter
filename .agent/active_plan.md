@@ -1,18 +1,23 @@
-# Active Plan: SPA-Only Future Feature Backlog
+# Active Plan: Comprehensive Test Suite
 
 ## Context
-- User requested running feature ideation to identify useful additions for this website.
-- User explicitly constrained solutions to SPA-contained features (no backend/database now or later).
+- User asked for a best-effort test suite to ensure the application works end-to-end.
 
 ## Constraints
 - Keep stack and patterns: React + TypeScript + MUI.
 - Preserve current behavior flows: API fetch, tabs, filters, pagination, favorites, seen-history, disclaimer messaging, modal details.
-- Do not introduce server-side persistence; all state must remain client-side (URL/localStorage/session).
 - Keep responsive behavior and avoid anti-patterns listed in `.agent/project_context.md`.
+- Validate resulting changes with the project-required checks (`npm run lint` and `npm run build`) plus tests once implemented.
 
 ## Atomic Steps
-1. Audit current capabilities from `README.md`, `.agent/project_context.md`, and key `src` feature files to avoid duplicate ideas.
-2. Rank candidate enhancements by user value while filtering out anything requiring a database/backend.
-3. Create `docs/FEATURES_FUTURE.md` with High/Medium/Low sections, required tracking columns, and a progress snapshot.
-4. Add top-3 execution guidance plus sequencing/dependency risks.
-5. Run Sentinel constraint audit, then record durable lessons in project memory via Historian (and Chronicler if applicable).
+1. Inspect current test setup and scripts in `package.json` and existing test files to identify gaps.
+   Constraint mapping: avoid changing product behavior while adding test coverage.
+2. Add or improve test tooling/config only if needed for stable, maintainable tests in the current React + TypeScript stack.
+   Constraint mapping: no alternate framework shifts, no changes to runtime feature logic.
+3. Implement high-value unit/integration tests for core user flows: fetch/render, species tabs, filters, pagination, favorites, seen-history, and modal details.
+   Constraint mapping: assert existing behavior contracts rather than redefining them.
+4. Add focused edge-case tests for critical states (loading, empty, error, persistence boundaries) where practical.
+   Constraint mapping: keep tests aligned with current UI behavior and messaging.
+5. Run verification commands and fix test failures caused by test code changes.
+   Constraint mapping: keep app buildable and lint-clean.
+6. Run Sentinel constraint audit and update durable project memory via Chronicler and Historian.

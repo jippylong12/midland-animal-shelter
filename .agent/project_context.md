@@ -31,3 +31,7 @@
 - **Topic:** Future feature scope for this product
 - **Rule:** Keep roadmap features SPA-contained by default, using only client-side persistence patterns (URL params, localStorage/sessionStorage, in-memory state, or browser cache).
 - **Reason:** The project is intentionally a frontend-only deployment with no backing database or server-owned user state.
+
+- **Topic:** Frontend regression testing baseline
+- **Rule:** Use Vitest + React Testing Library with a shared jsdom setup (`src/test/setup.ts`) that stubs `matchMedia`, clears localStorage, and resets mocks; cover core product behavior with App integration tests plus hook unit tests.
+- **Reason:** This catches regressions in fetch/tabs/filters/pagination/modal and localStorage-backed favorites/seen-history without changing runtime data flow.

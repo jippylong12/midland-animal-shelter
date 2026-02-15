@@ -6,7 +6,10 @@
 - Keep species tab selection indicator-only (yellow underline) and avoid selected tab pill backgrounds.
 - Keep default brand green mapped to the original MUI green values (`green[500]` + `green[600]`) unless user requests a brand shift.
 - Keep future feature work SPA-contained; no server/database dependencies should be introduced for roadmap items unless explicitly approved.
+- Standardize frontend testing on Vitest + React Testing Library + jsdom, with shared setup in `vitest.config.ts` and `src/test/setup.ts`.
 
 ## Gotchas
 - After adding new `@mui/icons-material` imports during dev, Vite may need a restart to avoid stale optimized dependency warnings/errors.
 - The project should pass both lint and production build checks after UI refactors (`npm run lint`, `npm run build`).
+- MUI `useMediaQuery` requires a `window.matchMedia` stub in jsdom tests, or App-level tests will fail at render time.
+- Keep test fixtures aligned to the COMAPI XML shapes (`ArrayOfXmlNode/XmlNode/adoptableSearch` for lists and `adoptableDetails` for modal details).
