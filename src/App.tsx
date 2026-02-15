@@ -13,8 +13,6 @@ import {
     useMediaQuery,
     Box,
     Container,
-    Alert,
-    AlertTitle,
     Paper,
     Stack,
     Typography,
@@ -645,7 +643,7 @@ function App() {
         ? `Last successful sync for ${tabLabels[selectedTab].label} was ${formatSyncTime(lastSyncAt)} (${syncAgeLabel}).`
         : `No successful sync has been recorded yet for ${tabLabels[selectedTab].label}.`;
     const isSyncStale = Boolean(lastSyncAt) && isDataStale(lastSyncAt);
-    const isDataFreshnessBannerVisible = selectedTab !== 4;
+    const isDataFreshnessFooterVisible = selectedTab !== 4;
 
     const modalComparePet = getPetFromModalData(modalData);
     const isCurrentPetInCompare = modalComparePet ? isInCompare(modalComparePet) : false;
@@ -687,22 +685,6 @@ function App() {
                         </Stack>
                     </Stack>
                 </Paper>
-
-                {isDataFreshnessBannerVisible && (
-                    <Alert
-                        severity={isSyncStale ? 'warning' : 'info'}
-                        variant="outlined"
-                        sx={{ mb: 2 }}
-                    >
-                        <AlertTitle>Data freshness</AlertTitle>
-                        {freshnessMessage}
-                        {isSyncStale ? (
-                            <>
-                                Data may be stale due to delayed API responses. Consider refreshing for the latest list.
-                            </>
-                        ) : null}
-                    </Alert>
-                )}
 
                 <Filters
                     searchQuery={searchQuery}
@@ -763,7 +745,11 @@ function App() {
                 <PaginationControls totalPages={totalPages} currentPage={currentPage} onPageChange={handlePageChange} />
             </Container>
 
-            <Footer />
+            <Footer
+                showDataFreshness={isDataFreshnessFooterVisible}
+                freshnessText={freshnessMessage}
+                isFreshnessStale={isSyncStale}
+            />
 
             <PetModal
                 isOpen={isModalOpen}
