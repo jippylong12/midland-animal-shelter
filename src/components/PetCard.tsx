@@ -10,6 +10,7 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
 import { AdoptableSearch } from '../types';
 import { getStageColor } from '../theme';
+
 interface PetCardProps {
     pet: AdoptableSearch;
     onClick: () => void;
@@ -68,6 +69,7 @@ const PetCard: React.FC<PetCardProps> = ({
                             e.preventDefault();
                             onToggleFavorite();
                         }}
+                        aria-label={isFavorite ? `Remove ${pet.Name} from favorites` : `Add ${pet.Name} to favorites`}
                         onMouseDown={(e) => e.stopPropagation()}
                         sx={{
                             position: 'absolute',
@@ -75,6 +77,11 @@ const PetCard: React.FC<PetCardProps> = ({
                             right: 8,
                             color: isFavorite ? '#FFD700' : 'white',
                             backgroundColor: 'rgba(26, 42, 29, 0.36)',
+                            '&.Mui-focusVisible': {
+                                outline: '2px solid',
+                                outlineColor: 'primary.main',
+                                outlineOffset: '3px',
+                            },
                             '&:hover': {
                                 backgroundColor: 'rgba(26, 42, 29, 0.58)',
                             },
@@ -92,10 +99,16 @@ const PetCard: React.FC<PetCardProps> = ({
                                     e.preventDefault();
                                     onMarkAsSeen();
                                 }}
+                                aria-label={isSeen ? `${pet.Name} already marked as seen` : `Mark ${pet.Name} as seen`}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 sx={{
                                     color: isSeen ? 'rgba(255, 255, 255, 0.8)' : 'white',
                                     backgroundColor: 'rgba(26, 42, 29, 0.36)',
+                                    '&.Mui-focusVisible': {
+                                        outline: '2px solid',
+                                        outlineColor: 'primary.main',
+                                        outlineOffset: '3px',
+                                    },
                                     '&:hover': {
                                         backgroundColor: 'rgba(26, 42, 29, 0.58)',
                                     },
@@ -118,6 +131,11 @@ const PetCard: React.FC<PetCardProps> = ({
                             sx={{
                                 color: isInCompare ? 'secondary.main' : 'white',
                                 backgroundColor: isInCompare ? 'rgba(201, 111, 22, 0.24)' : 'rgba(26, 42, 29, 0.36)',
+                                '&.Mui-focusVisible': {
+                                    outline: '2px solid',
+                                    outlineColor: 'secondary.main',
+                                    outlineOffset: '3px',
+                                },
                                 '&:hover': {
                                     backgroundColor: isInCompare ? 'rgba(201, 111, 22, 0.36)' : 'rgba(26, 42, 29, 0.58)',
                                 },

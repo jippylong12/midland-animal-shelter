@@ -224,6 +224,7 @@ function App() {
     const isRestoringFromUrl = useRef(false);
     const petsTabRef = useRef<number>(initialUrlState.selectedTab);
     const isFetchingPets = useRef(false);
+    const lastModalTriggerRef = useRef<HTMLElement | null>(null);
 
     // Favorites Hook
     const { favorites, toggleFavorite, isFavorite, isDisclaimerOpen, acceptDisclaimer, closeDisclaimer, checkAvailability } = useFavorites();
@@ -578,6 +579,11 @@ function App() {
 
     // Function to open modal
     const openModal = (animalID: number) => {
+        const activeElement = document.activeElement;
+        if (activeElement instanceof HTMLElement) {
+            lastModalTriggerRef.current = activeElement;
+        }
+
         setSelectedAnimalID(animalID);
         setIsModalOpen(true);
     };
@@ -588,6 +594,15 @@ function App() {
         setSelectedAnimalID(null);
         setModalData(null);
         setModalError(null);
+
+        window.requestAnimationFrame(() => {
+            const focusTarget = lastModalTriggerRef.current;
+            if (focusTarget?.isConnected) {
+                focusTarget.focus();
+            }
+
+            lastModalTriggerRef.current = null;
+        });
     };
 
     // Filter pets based on search and filters

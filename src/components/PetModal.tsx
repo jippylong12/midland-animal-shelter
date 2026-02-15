@@ -102,6 +102,8 @@ const PetModal: React.FC<PetModalProps> = ({
     const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
     const [isChecklistOpen, setIsChecklistOpen] = React.useState(false);
 
+    const titleId = 'pet-details-title';
+
     useEffect(() => {
         if (modalData?.Photo1) {
             setSelectedImage(modalData.Photo1);
@@ -167,6 +169,8 @@ const PetModal: React.FC<PetModalProps> = ({
             maxWidth="md"
             fullWidth
             scroll="paper"
+            aria-labelledby={titleId}
+            disableRestoreFocus={false}
             PaperProps={{ sx: { borderRadius: 3, overflow: 'hidden' } }}
         >
             <DialogTitle
@@ -179,7 +183,7 @@ const PetModal: React.FC<PetModalProps> = ({
                 }}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="h5" component="div" fontWeight="bold">
+                    <Typography id={titleId} variant="h5" component="div" fontWeight="bold">
                         {modalData ? modalData.AnimalName : 'Pet Details'}
                     </Typography>
                     {modalData && (
@@ -187,37 +191,68 @@ const PetModal: React.FC<PetModalProps> = ({
                             onClick={() => petFromModal && onToggleCompare(petFromModal)}
                             disabled={Boolean(petFromModal) && !isInCompare && !canAddCompare}
                             aria-label={petFromModal ? `${isInCompare ? 'Remove' : 'Add'} ${petFromModal.Name} from compare` : 'Compare this pet'}
-                            sx={{ color: isInCompare ? 'secondary.main' : 'action.active' }}
+                            sx={{
+                                color: isInCompare ? 'secondary.main' : 'action.active',
+                                '&.Mui-focusVisible': {
+                                    outline: '2px solid',
+                                    outlineColor: 'secondary.main',
+                                    outlineOffset: '3px',
+                                },
+                            }}
                         >
                             {isInCompare ? <LibraryAddCheckIcon /> : <CompareArrowsIcon />}
                         </IconButton>
                     )}
                     {modalData && (
-                            <IconButton
-                                onClick={() => {
-                                    if (petFromModal) {
-                                        toggleFavorite(petFromModal);
-                                    }
-                                }}
-                                sx={{ color: isFavorite(modalData.ID) ? '#FFD700' : 'action.active' }}
-                            >
-                                {isFavorite(modalData.ID) ? <StarIcon /> : <StarBorderIcon />}
-                            </IconButton>
+                        <IconButton
+                            onClick={() => {
+                                if (petFromModal) {
+                                    toggleFavorite(petFromModal);
+                                }
+                            }}
+                            aria-label={petFromModal ? `${isFavorite(petFromModal.ID) ? 'Remove' : 'Add'} ${petFromModal.Name} from favorites` : 'Toggle favorite for this pet'}
+                            sx={{
+                                color: isFavorite(modalData.ID) ? '#FFD700' : 'action.active',
+                                '&.Mui-focusVisible': {
+                                    outline: '2px solid',
+                                    outlineColor: 'primary.main',
+                                    outlineOffset: '3px',
+                                },
+                            }}
+                        >
+                            {isFavorite(modalData.ID) ? <StarIcon /> : <StarBorderIcon />}
+                        </IconButton>
                     )}
                     {modalData && isSeenEnabled && (
-                            <IconButton
-                                onClick={() => {
-                                    if (petFromModal) {
-                                        markAsSeen(petFromModal);
-                                    }
-                                }}
-                                sx={{ color: petFromModal && isSeen(petFromModal) ? 'primary.main' : 'action.active' }}
-                            >
-                                <VisibilityIcon />
-                            </IconButton>
+                        <IconButton
+                            onClick={() => {
+                                if (petFromModal) {
+                                    markAsSeen(petFromModal);
+                                }
+                            }}
+                            aria-label={petFromModal ? `${isSeen(petFromModal) ? `${petFromModal.Name} already marked as seen` : `Mark ${petFromModal.Name} as seen`}` : 'Mark this pet as seen'}
+                            sx={{
+                                color: petFromModal && isSeen(petFromModal) ? 'primary.main' : 'action.active',
+                                '&.Mui-focusVisible': {
+                                    outline: '2px solid',
+                                    outlineColor: 'primary.main',
+                                    outlineOffset: '3px',
+                                },
+                            }}
+                        >
+                            <VisibilityIcon />
+                        </IconButton>
                     )}
                 </Box>
-                <Button onClick={onClose} color="inherit" variant="outlined">Close</Button>
+                <Button
+                    onClick={onClose}
+                    color="inherit"
+                    variant="outlined"
+                    aria-label="Close pet details"
+                    autoFocus
+                >
+                    Close
+                </Button>
             </DialogTitle>
             <DialogContent dividers>
                 {modalLoading ? (

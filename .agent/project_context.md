@@ -58,3 +58,7 @@
 - **Topic:** Filter panel scalability
 - **Rule:** Keep `src/components/Filters.tsx` compact by default and place lower-frequency controls (sorting, age bounds, presets, and history utilities) in an explicit advanced section while keeping the same prop/callback contract.
 - **Reason:** This reduces cognitive load and component sprawl without changing fetch/filter behavior or parent state flow.
+
+- **Topic:** Accessibility for icon-only controls and modal focus
+- **Rule:** Require explicit `aria-label` on icon-only actions and stable focus-return behavior for modal dialogs (capture trigger element on open, restore focus to trigger on close).
+- **Reason:** This keeps modal and card interactions usable by keyboard and assistive technologies without changing existing app behavior or state flow.

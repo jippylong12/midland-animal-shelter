@@ -385,6 +385,84 @@ describe('App', () => {
         expect(await screen.findByRole('link', { name: /adopt ranger/i })).toBeInTheDocument();
     });
 
+    it('labels icon-only card and modal controls for screen readers', async () => {
+        localStorage.setItem('shelter_favorites_disclaimer', 'true');
+        localStorage.setItem('seenPetsEnabled', JSON.stringify(true));
+        const searchXml = buildSearchXml([
+            createPet({ ID: 77, Name: 'Ranger', Species: 'Dog', PrimaryBreed: 'Shepherd' }),
+        ]);
+        const detailsXml = buildDetailsXml(
+            createPetDetails({
+                ID: 77,
+                AnimalName: 'Ranger',
+                Species: 'Dog',
+                PrimaryBreed: 'Shepherd',
+                Stage: 'Available',
+                AdoptionApplicationUrl: 'https://example.com/adopt/ranger',
+            })
+        );
+        const fetchMock = vi.fn((url: string) => {
+            if (url.includes('speciesID=')) {
+                return Promise.resolve(toResponse(searchXml));
+            }
+            return Promise.resolve(toResponse(detailsXml));
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Ranger');
+
+        expect(screen.getByRole('button', { name: 'Add Ranger to favorites' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Mark Ranger as seen' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Add Ranger to compare' })).toBeInTheDocument();
+
+        await userEvent.click(screen.getByRole('button', { name: /^Ranger/ }));
+        const modal = await screen.findByRole('dialog');
+
+        expect(within(modal).getByRole('button', { name: /add ranger .*favorites/i })).toBeInTheDocument();
+        expect(within(modal).getByRole('button', { name: /add ranger .*compare/i })).toBeInTheDocument();
+        expect(within(modal).getByRole('button', { name: /close pet details/i })).toBeInTheDocument();
+    });
+
+    it('supports keyboard modal open/close flow and restores focus to the source card', async () => {
+        const searchXml = buildSearchXml([
+            createPet({ ID: 77, Name: 'Ranger', Species: 'Dog', PrimaryBreed: 'Shepherd' }),
+        ]);
+        const detailsXml = buildDetailsXml(
+            createPetDetails({
+                ID: 77,
+                AnimalName: 'Ranger',
+                Species: 'Dog',
+                PrimaryBreed: 'Shepherd',
+                Stage: 'Available',
+            })
+        );
+        const fetchMock = vi.fn((url: string) => {
+            if (url.includes('speciesID=')) {
+                return Promise.resolve(toResponse(searchXml));
+            }
+            return Promise.resolve(toResponse(detailsXml));
+        });
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        const cardAction = await screen.findByRole('button', { name: /^Ranger/ });
+        cardAction.focus();
+
+        await userEvent.keyboard('{Enter}');
+        const closeButton = await screen.findByRole('button', { name: /close pet details/i });
+        expect(closeButton).toHaveFocus();
+
+        await userEvent.keyboard('{Escape}');
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        });
+
+        await waitFor(() => {
+            expect(cardAction).toHaveFocus();
+        });
+    });
+
     it('persists checklist and notes for a pet in the modal', async () => {
         const searchXml = buildSearchXml([
             createPet({ ID: 77, Name: 'Ranger', Species: 'Dog', PrimaryBreed: 'Shepherd' }),
@@ -428,7 +506,7 @@ describe('App', () => {
         });
         expect(stored[77].notes).toBe('Needs a fenced yard.');
 
-        await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+        await userEvent.click(screen.getByRole('button', { name: /close pet details/i }));
         await userEvent.click(screen.getByText('Ranger'));
 
         await userEvent.click(await screen.findByRole('button', { name: 'Adoption Checklist' }));

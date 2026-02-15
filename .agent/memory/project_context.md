@@ -16,6 +16,8 @@
 - Keep `Filters` compact-by-default and gate lower-frequency controls behind an explicit advanced section to reduce visual density without changing callback/state contracts.
 - For pet-specific local persistence features, keep data normalization/serialization in utility modules and expose narrow hooks in `App` to scope writes by stable IDs.
 - Reuse modal props as a transport for persisted, per-entity UI state (for example, checklist and notes in the details modal) rather than adding global modal-local mutation logic.
+- Preserve keyboard and screen-reader accessibility state when opening/closing modals by capturing the active trigger and restoring focus deterministically after close.
+- Require explicit accessible labels for icon-only controls (`aria-label`) and add consistent focus-visible cues before shipping accessibility-focused UI upgrades.
 
 ## Gotchas
 - After adding new `@mui/icons-material` imports during dev, Vite may need a restart to avoid stale optimized dependency warnings/errors.
@@ -25,6 +27,7 @@
 - Stale warnings should only be shown when a valid sync timestamp exists and exceeds the freshness threshold; treat missing history as “no sync yet” for informational messaging.
 - Preset data in localStorage should be treated as untrusted: normalize filter values (including gender/sort/breed/age values) on read so malformed records cannot break the filters UI.
 - When a localStorage-backed hook performs sequential updates in one event, prefer functional `setState` updates to avoid stale closure merges that can overwrite earlier mutations.
+- App modal open/close flows can emit warnings and extra focus updates in tests unless assertions are scoped to user-visible behavior (`findByRole`, focus checks, and awaited closing transitions).
 
 ## Patterns & Recipes
 - **Topic:** Pet-local state persistence

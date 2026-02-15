@@ -1,27 +1,27 @@
-# Active Plan: Implement FTR-M02
+# Active Plan: Implement FTR-M03
 
 ## Status
 - Completed.
-- Implement `FTR-M02` (Adoption checklist and notes per pet) with localStorage persistence and test coverage.
+- Implement `FTR-M03` (Accessibility upgrade pass) with keyboard focus and screen-reader upgrades, plus full integration test coverage.
 
 ## Context
-- FTR-M02 in `docs/FEATURES_FUTURE.md` asks for an adoption checklist and notes, persisted on the client and tied by pet ID.
+- FTR-M03 in `docs/FEATURES_FUTURE.md` requests keyboard + focus + screen-reader upgrades for modal and icon-only controls.
 - Must remain frontend-only and keep the API contract unchanged.
-- Align with `.agent/project_context.md` constraints.
+- Align with `.agent/project_context.md` constraints and maintain modal actions, filters, pagination, favorites, seen history, and compare behavior.
 
 ## Constraints
 - Keep React + TypeScript + MUI only.
-- Preserve existing core behaviors: tabs, filters, pagination, favorites, seen, compare, URL state, and modal actions.
-- Keep persistence local-only using browser storage and robust normalization on read.
-- Maintain mobile/desktop responsiveness and existing accessibility patterns.
+- Preserve core behaviors: tabs, filters, pagination, favorites, seen, compare, URL state, and modal actions.
+- Keep persistence local-only; no API contract changes.
+- Maintain mobile and desktop responsiveness.
 
 ## Atomic Steps
-1. Add a normalized checklist model and persistence helpers in `src/utils/adoptionChecklist.ts` using existing localStorage resilience patterns.
-- Constraint mapping: no API contract changes and safe handling of malformed payloads.
-2. Add `src/hooks/useAdoptionChecklist.ts` to hydrate, mutate, and persist checklist entries by pet ID.
-- Constraint mapping: avoid global-state migration and keep local data flow close to `App`.
-3. Wire checklist UI into `PetModal` and integrate callbacks through `App.tsx`.
-- Constraint mapping: keep existing modal behavior for favorites/seen/compare and no API contract changes.
-4. Add test coverage for hook persistence and modal checklist/notes UX flow.
-- Constraint mapping: extend existing Vitest and React Testing Library suites.
-5. Update `docs/FEATURES_FUTURE.md` with shipped status and verify `npm run test` + `npm run lint` + `npm run build`.
+1. Add explicit screen-reader labels and keyboard-visible focus styles for icon-only actions in pet cards and modal headers.
+   - Constraint mapping: avoid altering primary interaction patterns or API behavior.
+2. Add modal focus management in `App.tsx` and `PetModal.tsx` to ensure deterministic focus on open and return-to-trigger behavior on close.
+   - Constraint mapping: preserve modal lifecycle and existing close semantics.
+3. Add RTL coverage in `src/App.test.tsx` for labeled icon actions and focus return flow.
+   - Constraint mapping: stay within the current Vitest + Testing Library stack.
+4. Update `docs/FEATURES_FUTURE.md` status fields and progress snapshot for `FTR-M03`.
+   - Constraint mapping: keep roadmap formatting and history intact.
+5. Run `npm run test`, `npm run lint`, and `npm run build`, then report exact outcomes.

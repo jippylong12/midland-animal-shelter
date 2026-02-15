@@ -7,11 +7,11 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 | Metric | Value |
 |---|---:|
 | Total backlog items | 12 |
-| Backlog | 7 |
+| Backlog | 6 |
 | Planned | 0 |
 | In Progress | 0 |
 | Blocked | 0 |
-| Shipped | 5 |
+| Shipped | 6 |
 | Dropped | 0 |
 
 ## High
@@ -29,7 +29,7 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 |---|---|---|---|---|---|---|---|
 | FTR-M01 | Saved search presets (local only) | Frequent users can save common filter combinations and reapply in one click. | Shipped | Engineering | v1.12 | 2026-02-15 | Store named presets in localStorage with lightweight validation. |
 | FTR-M02 | Adoption checklist and notes per pet | Helps households track decision criteria without leaving the app, increasing completion confidence. | Shipped | Engineering | v1.12 | 2026-02-15 | Persist checklist/notes locally and tie by pet ID. |
-| FTR-M03 | Accessibility upgrade pass (keyboard + focus + SR labels) | Improves usability for keyboard and assistive tech users and reduces interaction friction on mobile. | Backlog | Unassigned | v1.13 |  | Add focus management for modal/tabs and aria labels for icon-only actions. |
+| FTR-M03 | Accessibility upgrade pass (keyboard + focus + SR labels) | Improves usability for keyboard and assistive tech users and reduces interaction friction on mobile. | Shipped | Engineering | v1.13 | 2026-02-15 | Added focus management for modal open/close and labeled all remaining icon-only controls. |
 | FTR-M04 | Offline fallback for last successful list | Keeps the app useful during temporary network issues by showing cached data with clear stale indicators. | Backlog | Unassigned | v1.13 |  | Cache list/detail responses in browser storage; read-only fallback mode. |
 
 ## Low
@@ -43,12 +43,12 @@ This backlog is intentionally limited to SPA-contained features. No server, data
 
 ## Top 3 next items
 
-1. **FTR-M03 Accessibility upgrade pass (keyboard + focus + SR labels)**
-   - Dependency: icon-only controls and modal focus traps.
-   - Risk: inconsistent accessibility patterns across existing icon actions.
-2. **FTR-M04 Offline fallback for last successful list**
+1. **FTR-M04 Offline fallback for last successful list**
    - Dependency: define cache invalidation and stale read policy.
    - Risk: stale data presenting as fresh if timestamps are mishandled.
-3. **FTR-L01 Copy/share pet summary text**
+2. **FTR-L01 Copy/share pet summary text**
    - Dependency: clean copy-generation rules for short summaries.
    - Risk: inaccurate or outdated text when listings change.
+3. **FTR-L02 Personal fit scoring sliders (local preference model)**
+   - Dependency: define non-intrusive scoring signals and defaults.
+   - Risk: recommendations that feel arbitrary without explainability.
