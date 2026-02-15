@@ -44,6 +44,7 @@ interface FiltersProps {
     uniqueStages: string[];
     sortBy: string;
     onSortByChange: (event: SelectChangeEvent<string>) => void;
+    isPersonalFitEnabled: boolean;
     isSeenEnabled: boolean;
     onToggleSeenFeature: () => void;
     hideSeen: boolean;
@@ -75,6 +76,7 @@ const Filters: React.FC<FiltersProps> = ({
     uniqueStages,
     sortBy,
     onSortByChange,
+    isPersonalFitEnabled,
     isSeenEnabled,
     onToggleSeenFeature,
     hideSeen,
@@ -168,7 +170,7 @@ const Filters: React.FC<FiltersProps> = ({
                     <Grid item xs={12} sm={6} md={2}>
                         <FormControl fullWidth variant="outlined">
                             <InputLabel id="gender-label">Gender</InputLabel>
-                            <Select
+                                <Select
                                 labelId="gender-label"
                                 value={gender}
                                 onChange={onGenderChange}
@@ -242,8 +244,11 @@ const Filters: React.FC<FiltersProps> = ({
                                             <em>Newest default</em>
                                         </MenuItem>
                                         <MenuItem value="breed">Breed (A-Z)</MenuItem>
-                                        <MenuItem value="age">Age (youngest)</MenuItem>
-                                    </Select>
+                                    <MenuItem value="age">Age (youngest)</MenuItem>
+                                    <MenuItem value="score" disabled={!isPersonalFitEnabled}>
+                                        Personal fit score {!isPersonalFitEnabled ? '(enable first)' : ''}
+                                    </MenuItem>
+                                </Select>
                                 </FormControl>
                             </Grid>
 

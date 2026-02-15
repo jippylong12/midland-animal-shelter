@@ -16,10 +16,12 @@
 - Keep `Filters` compact-by-default and gate lower-frequency controls behind an explicit advanced section to reduce visual density without changing callback/state contracts.
 - For pet-specific local persistence features, keep data normalization/serialization in utility modules and expose narrow hooks in `App` to scope writes by stable IDs.
 - For transient offline resilience, cache successful list/detail API responses in localStorage via dedicated utility modules, then hydrate fallback UI from cache before surfacing network errors.
+- Co-locate personal ranking controls in a dedicated settings surface (`Settings` tab) rather than listing filters to avoid conflating discovery controls with preference management.
 - Reuse modal props as a transport for persisted, per-entity UI state (for example, checklist and notes in the details modal) rather than adding global modal-local mutation logic.
 - Preserve keyboard and screen-reader accessibility state when opening/closing modals by capturing the active trigger and restoring focus deterministically after close.
 - Require explicit accessible labels for icon-only controls (`aria-label`) and add consistent focus-visible cues before shipping accessibility-focused UI upgrades.
 - Centralize modal share text generation in a utility (`src/utils/petSummary.ts`) and keep clipboard interaction in `PetModal` as a fallback-first flow (Clipboard API → legacy `execCommand`), returning explicit success/error messages.
+- Keep preference slider directionality explicit in both labeling and implementation (`low` values should map to one named pole and `high` values to the opposite) and persist that contract in targeted tests.
 
 ## Gotchas
 - After adding new `@mui/icons-material` imports during dev, Vite may need a restart to avoid stale optimized dependency warnings/errors.
@@ -31,6 +33,14 @@
 - Preset data in localStorage should be treated as untrusted: normalize filter values (including gender/sort/breed/age values) on read so malformed records cannot break the filters UI.
 - When a localStorage-backed hook performs sequential updates in one event, prefer functional `setState` updates to avoid stale closure merges that can overwrite earlier mutations.
 - App modal open/close flows can emit warnings and extra focus updates in tests unless assertions are scoped to user-visible behavior (`findByRole`, focus checks, and awaited closing transitions).
+
+## Decisions Applied
+- **Topic:** Personal fit age slider direction
+  - **Rule:** Age preference now maps low values to younger profiles and high values to older profiles, with slider marks and `aria`/label text to make the relationship explicit.
+  - **Reason:** Prevents user confusion and ensures score ordering aligns with numeric slider direction.
+- **Topic:** Personal fit settings navigation
+  - **Rule:** Personal preference controls should be discoverable from a top-level `Settings` tab with an explicit opt-in toggle; sorting-by-score should remain disabled until enabled.
+  - **Reason:** Makes source-of-score behavior obvious and avoids confusion that rankings are always active.
 
 ## Patterns & Recipes
 - **Topic:** Pet-local state persistence

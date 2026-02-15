@@ -64,5 +64,13 @@
 - **Reason:** This keeps modal and card interactions usable by keyboard and assistive technologies without changing existing app behavior or state flow.
 
 - **Topic:** Offline resilience for list/detail views
-- **Rule:** Keep offline fallback client-side by caching last successful pet list and detail payloads in `localStorage`, validating schemas during read/write, and preferring cached data on fetch failure while surfacing explicit read-only indicators.
-- **Reason:** This preserves core browsing and modal behavior during transient network failures while retaining trust signals and preventing malformed payloads from polluting UI state.
+  - **Rule:** Keep offline fallback client-side by caching last successful pet list and detail payloads in `localStorage`, validating schemas during read/write, and preferring cached data on fetch failure while surfacing explicit read-only indicators.
+  - **Reason:** This preserves core browsing and modal behavior during transient network failures while retaining trust signals and preventing malformed payloads from polluting UI state.
+
+- **Topic:** Personal-fit slider semantics and transparency
+  - **Rule:** For preference controls where user intent flips with slider direction, define the semantic direction explicitly (`0 = younger`, `100 = older`), surface it in UI labels/marks, and assert it with unit tests.
+  - **Reason:** This removes ambiguity around score interpretation and prevents silent reversals in ranking behavior when scoring formulas evolve.
+
+- **Topic:** Settings placement for preference controls
+  - **Rule:** Place client-owned preference/model-tuning controls in a dedicated Settings tab and require explicit enablement before they affect ranking/sorting.
+  - **Reason:** This preserves list browsing clarity, avoids confusing implicit behavior changes, and makes score provenance discoverable.

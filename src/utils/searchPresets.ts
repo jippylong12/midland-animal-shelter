@@ -35,9 +35,11 @@ const normalizePresetName = (value: unknown): string => {
         : trimmed;
 };
 
+const MAX_TAB_INDEX = 5;
+
 const normalizeSelectedTab = (value: unknown): number => {
     const tab = Number(value);
-    return Number.isInteger(tab) && tab >= 0 && tab <= 4 ? tab : 0;
+    return Number.isInteger(tab) && tab >= 0 && tab <= MAX_TAB_INDEX ? tab : 0;
 };
 
 const normalizeGender = (value: unknown): SavedSearchGender => {

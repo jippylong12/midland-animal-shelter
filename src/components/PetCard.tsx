@@ -1,13 +1,14 @@
 // PetCard.tsx
 
 import React from 'react';
-import { Card, CardMedia, CardContent, Typography, CardActionArea, Chip, Box, IconButton } from '@mui/material';
+import { Card, CardMedia, CardContent, Typography, CardActionArea, Chip, Box, IconButton, Stack, LinearProgress } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import NewReleasesIcon from '@mui/icons-material/NewReleases';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
+import ScoreIcon from '@mui/icons-material/Score';
 import { AdoptableSearch } from '../types';
 import { getStageColor } from '../theme';
 import { OFFLINE_IMAGE_FALLBACK } from '../utils/imageFallback';
@@ -24,6 +25,7 @@ interface PetCardProps {
     isInCompare: boolean;
     isCompareLimitReached: boolean;
     onToggleCompare: () => void;
+    matchScore: number | null;
 }
 
 const PetCard: React.FC<PetCardProps> = ({
@@ -38,6 +40,7 @@ const PetCard: React.FC<PetCardProps> = ({
     isInCompare,
     isCompareLimitReached,
     onToggleCompare,
+    matchScore,
 }) => {
 
     const formatAge = (age: number): string => {
@@ -195,14 +198,38 @@ const PetCard: React.FC<PetCardProps> = ({
                         />
                     </Box>
 
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontStyle: 'italic' }}>
-                        {pet.PrimaryBreed}
-                        {pet.SecondaryBreed && ` • ${pet.SecondaryBreed}`}
-                    </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontStyle: 'italic' }}>
+                                {pet.PrimaryBreed}
+                                {pet.SecondaryBreed && ` • ${pet.SecondaryBreed}`}
+                            </Typography>
 
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
-                        <Chip label={formatAge(pet.Age)} size="small" />
-                        <Chip
+                            {matchScore === null ? null : (
+                                <Box sx={{ mb: 1 }}>
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <ScoreIcon color="primary" fontSize="small" />
+                                        <Typography variant="body2" fontWeight={600}>
+                                            Personal fit: {matchScore}%
+                                        </Typography>
+                                    </Stack>
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={matchScore}
+                                        sx={{
+                                            mt: 0.7,
+                                            height: 7,
+                                            borderRadius: 999,
+                                            bgcolor: 'rgba(15, 89, 2, 0.12)',
+                                            '& .MuiLinearProgress-bar': {
+                                                borderRadius: 999,
+                                            },
+                                        }}
+                                    />
+                                </Box>
+                            )}
+
+                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2 }}>
+                                <Chip label={formatAge(pet.Age)} size="small" />
+                                <Chip
                             label={pet.Location}
                             size="small"
                             variant="outlined"

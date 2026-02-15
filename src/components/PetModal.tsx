@@ -22,6 +22,7 @@ import {
     Checkbox,
     FormControlLabel,
     TextField,
+    LinearProgress,
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
@@ -30,6 +31,7 @@ import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import LibraryAddCheckIcon from '@mui/icons-material/LibraryAddCheck';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ScoreIcon from '@mui/icons-material/Score';
 import { AdoptableDetails, AdoptableDetailsXmlNode, AdoptableSearch } from '../types';
 import { XMLParser } from 'fast-xml-parser';
 import { getStageColor } from '../theme';
@@ -59,6 +61,7 @@ interface PetModalProps {
     isInCompare: boolean;
     canAddCompare: boolean;
     onToggleCompare: (pet: AdoptableSearch) => void;
+    fitScore?: number | null;
     checklist: AdoptionChecklist;
     onChecklistItemChange: (itemId: AdoptionChecklistItemId, isChecked: boolean) => void;
     onChecklistNotesChange: (notes: string) => void;
@@ -129,6 +132,7 @@ const PetModal: React.FC<PetModalProps> = ({
     isInCompare,
     canAddCompare,
     onToggleCompare,
+    fitScore,
     checklist,
     onChecklistItemChange,
     onChecklistNotesChange,
@@ -256,11 +260,35 @@ const PetModal: React.FC<PetModalProps> = ({
                     borderBottom: '1px solid rgba(26, 42, 29, 0.1)',
                     alignItems: 'stretch',
                 }}
-            >
+                >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography id={titleId} variant="h5" component="div" fontWeight="bold" sx={{ flexGrow: 1 }}>
                         {modalData ? modalData.AnimalName : 'Pet Details'}
                     </Typography>
+                    {modalData && fitScore !== null && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: 120 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <ScoreIcon color="primary" fontSize="small" />
+                                <Typography variant="body2" fontWeight={700}>
+                                    Personal fit: {fitScore}%
+                                </Typography>
+                            </Stack>
+                            <LinearProgress
+                                variant="determinate"
+                                value={fitScore}
+                                sx={{
+                                    mt: 0.4,
+                                    height: 6,
+                                    borderRadius: 6,
+                                    width: 120,
+                                    bgcolor: 'rgba(15, 89, 2, 0.12)',
+                                    '& .MuiLinearProgress-bar': {
+                                        borderRadius: 6,
+                                    },
+                                }}
+                            />
+                        </Box>
+                    )}
                     {modalData && (
                         <IconButton
                             onClick={() => {

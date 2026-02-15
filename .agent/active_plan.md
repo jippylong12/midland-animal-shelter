@@ -1,35 +1,47 @@
-# Active Plan: Implement FTR-L01
+# Active Plan: Implement FTR-L02
 
 ## Status
-- Prepared.
-- Implement `FTR-L01` (Copy/share pet summary text) with a modal-first sharing flow, resilient clipboard behavior, and test coverage.
+- Completed.
+- Move personal-fit controls into a dedicated `Settings` top tab, keep the feature opt-in via toggle, and keep score-based ranking disabled until enabled.
+- Preserve existing core behaviors: API fetch, tabs, filters, pagination, favorites, seen-history, compare, and modal details.
 
 ## Context
-- `FTR-L01` in `docs/FEATURES_FUTURE.md` requests plain-text summary generation from existing pet fields and share/copy support.
-- Must remain frontend-only and avoid API contract changes.
-- Preserve existing core behaviors: tabs, filters, pagination, favorites, seen-history, compare, and modal flow.
+- `FTR-L02` in `docs/FEATURES_FUTURE.md` is marked `Shipped`.
+- The app is React + TypeScript + MUI with client-only persistence and deep-linkable filter state.
 
 ## Constraints
-- Keep React + TypeScript + MUI with existing theming; no alternate UI framework.
-- Keep core behaviors unchanged: URL state, tabs, filters, pagination, favorites/seen/compare, modal details.
-- No API schema changes; persist any new feature data client-side only.
-- Maintain mobile + desktop responsive quality.
-- Preserve accessibility and focus behavior patterns already established.
+- Keep React + TypeScript + MUI; do not introduce alternate UI frameworks.
+- Do not alter API contract or fetching model (species endpoints remain unchanged).
+- Keep responsive behavior first-class on mobile and desktop.
+- Preserve existing core behaviors and modal/a11y flows.
+- Persist preference model in localStorage only; validate and sanitize hydration.
+- Keep local ranking deterministic and URL-synced where applicable.
+- Follow existing theme patterns and centralized token usage.
 
 ## Atomic Steps
-1. Add a reusable plain-text summary generator for `AdoptableDetails` and utility-level formatting helpers (age, optional fields, stable copy body).
-   - Constraint mapping: keeps formatting centralized and avoids duplicating logic.
-2. Extend `PetModal` with a dedicated copy/share action in modal actions.
-   - Constraint mapping: keep user interaction within existing modal UX and avoid changing list flow.
-3. Implement resilient copy behavior in `PetModal`:
-   - Prefer `navigator.clipboard.writeText`.
-   - Graceful fallback to hidden textarea + `document.execCommand('copy')` when modern clipboard is unavailable.
-   - Surface success/error feedback with clear status text.
-4. Add focused UI/UX treatment (disabled state while loading, inline status chips/smaller typography, clear aria labels) consistent with current visual language.
-   - Constraint mapping: maintain accessibility and no icon-only ambiguity.
-5. Add test coverage for summary generation, copy success path, and fallback path in `src/App.test.tsx` (and utility test if extracted).
-   - Constraint mapping: use Vitest + RTL + localStorage/DOM setup patterns.
-6. Update `docs/FEATURES_FUTURE.md`:
-   - Set `FTR-L01` status to `Shipped` with owner/version/date and notes.
-   - Update progress snapshot totals.
-7. Run `npm run test`, `npm run lint`, and `npm run build` in order and report exact outcomes.
+1. Add a local scoring domain model in a new utility:
+   - Define preferences schema with slider weights.
+   - Add normalization/parsing for localStorage.
+   - Add score + explainability helpers for list cards.
+   - Constraint mapping: keeps persistence and score logic isolated and tested.
+2. Add a dedicated `Settings` tab and move preference controls there:
+   - Add `Settings` to tab config and route list/detail rendering to tab kind.
+   - Preserve list views on `fetch` tabs and hide listing controls when on settings.
+   - Add explanatory copy around score provenance and ownership.
+   - Constraint mapping: clarifies where preferences come from and avoids confusion.
+3. Extend URL and application state in `App.tsx`:
+   - Add scoring preferences state initialized from localStorage.
+   - Persist preference changes to localStorage.
+   - Add sort option for score-only ranking using computed match scores.
+   - Compute sorted list ordering with stable tie-breakers and keep pagination behavior unchanged.
+4. Surface score in cards and modal context:
+   - Re-use existing score chip/progress in `PetCard` and modal header badge.
+   - Ensure sort option and score badges only appear when personal fit is enabled.
+   - Constraint mapping: improves UX without changing modal semantics.
+5. Add full tests:
+   - New utility tests for scoring outputs and persistence behavior.
+   - App-level tests for scoring slider control, persistence, URL interaction, and ranking by score.
+6. Validate and document:
+   - Mark `FTR-L02` shipped with date, owner, notes.
+   - Update progress snapshot totals and top-3 list if needed.
+7. Run `npm run test`, `npm run lint`, `npm run build` in that order and report exact pass/fail.

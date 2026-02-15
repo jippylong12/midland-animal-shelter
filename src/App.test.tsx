@@ -9,6 +9,7 @@ import { NEW_MATCH_STORAGE_KEY } from './utils/newMatchTracker';
 import { DATA_FRESHNESS_KEY } from './utils/dataFreshness';
 import { SEARCH_PRESET_STORAGE_KEY } from './utils/searchPresets';
 import { ADOPTION_CHECKLIST_STORAGE_KEY } from './utils/adoptionChecklist';
+import { PERSONAL_FIT_ENABLED_KEY, PERSONAL_FIT_PREFERENCES_KEY } from './utils/personalFitScoring';
 import { writeCachedPetDetails, writeCachedPetList } from './utils/offlineCache';
 
 const toResponse = (body: string, status = 200): Response =>
@@ -32,6 +33,7 @@ const setLocationSearch = (search = '') => {
 
 describe('App', () => {
     beforeEach(() => {
+        localStorage.clear();
         setLocationSearch('');
     });
 
@@ -147,6 +149,193 @@ describe('App', () => {
         expect(screen.getByRole('tab', { name: 'Dogs' })).toHaveAttribute('aria-selected', 'true');
         expect((screen.getByLabelText('Min age (yrs)') as HTMLInputElement).value).toBe('1');
         expect((screen.getByLabelText('Max age (yrs)') as HTMLInputElement).value).toBe('3');
+    });
+
+    it('ranks older pets first when personal fit age preference favors older pets', async () => {
+        const pets = [
+            createPet({ ID: 1, Name: 'Old Dog', Age: 120, Stage: 'Available', SpecialNeeds: '' }),
+            createPet({ ID: 2, Name: 'Young Dog', Age: 6, Stage: 'Available', SpecialNeeds: '' }),
+        ];
+        localStorage.setItem(PERSONAL_FIT_ENABLED_KEY, JSON.stringify(true));
+        localStorage.setItem(PERSONAL_FIT_PREFERENCES_KEY, JSON.stringify({
+            agePreference: 90,
+            stagePriority: 0,
+            specialNeedsPriority: 0,
+        }));
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        setLocationSearch('sort=score');
+        renderApp();
+
+        const getScores = () => screen.getAllByText(/^Personal fit:/i)
+            .map((label) => Number(label.textContent?.match(/(\d+)/)?.[1]));
+        await waitFor(() => {
+            const scores = getScores();
+            expect(scores).toHaveLength(2);
+            expect(scores[0]).toBeGreaterThan(scores[1]);
+        });
+    });
+
+    it('ranks younger pets first when personal fit age preference favors younger pets', async () => {
+        const pets = [
+            createPet({ ID: 1, Name: 'Old Dog', Age: 120, Stage: 'Available', SpecialNeeds: '' }),
+            createPet({ ID: 2, Name: 'Young Dog', Age: 6, Stage: 'Available', SpecialNeeds: '' }),
+        ];
+        localStorage.setItem(PERSONAL_FIT_ENABLED_KEY, JSON.stringify(true));
+        localStorage.setItem(PERSONAL_FIT_PREFERENCES_KEY, JSON.stringify({
+            agePreference: 10,
+            stagePriority: 0,
+            specialNeedsPriority: 0,
+        }));
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        setLocationSearch('sort=score');
+        renderApp();
+
+        const getScores = () => screen.getAllByText(/^Personal fit:/i)
+            .map((label) => Number(label.textContent?.match(/(\d+)/)?.[1]));
+        await waitFor(() => {
+            const scores = getScores();
+            expect(scores).toHaveLength(2);
+            expect(scores[0]).toBeGreaterThan(scores[1]);
+        });
+    });
+
+    it('hydrates and displays personal fit preferences from localStorage', async () => {
+        const pets = [
+            createPet({ ID: 1, Name: 'Rex', Age: 20 }),
+            createPet({ ID: 2, Name: 'Luna', Age: 200 }),
+        ];
+        localStorage.setItem(PERSONAL_FIT_ENABLED_KEY, JSON.stringify(true));
+        localStorage.setItem(PERSONAL_FIT_PREFERENCES_KEY, JSON.stringify({
+            agePreference: 90,
+            stagePriority: 10,
+            specialNeedsPriority: 20,
+        }));
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Rex');
+
+        await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+
+        const ageSlider = screen.getByRole('slider', { name: 'Age profile' });
+        const stageSlider = screen.getByRole('slider', { name: 'Stage preference' });
+        const needsSlider = screen.getByRole('slider', { name: 'Special-needs preference' });
+        expect(ageSlider).toHaveAttribute('aria-valuenow', '90');
+        expect(stageSlider).toHaveAttribute('aria-valuenow', '10');
+        expect(needsSlider).toHaveAttribute('aria-valuenow', '20');
+    });
+
+    it('renders personal fit controls in Settings tab and hides listing controls there', async () => {
+        const pets = [
+            createPet({ ID: 1, Name: 'Rex', Age: 20 }),
+        ];
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Rex');
+
+        await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+
+        expect(screen.getByRole('heading', { name: 'Personal fit scoring' })).toBeInTheDocument();
+        expect(screen.getByRole('checkbox', { name: /Enable|Enabled/i })).toBeInTheDocument();
+        expect(screen.queryByRole('textbox', { name: 'Search by name or breed' })).not.toBeInTheDocument();
+    });
+
+    it('enables personal fit from Settings and unlocks score sort', async () => {
+        const pets = [
+            createPet({ ID: 1, Name: 'Old Dog', Age: 120, Stage: 'Available', SpecialNeeds: '' }),
+            createPet({ ID: 2, Name: 'Young Dog', Age: 6, Stage: 'Available', SpecialNeeds: '' }),
+        ];
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderApp();
+        await screen.findByText('Old Dog');
+        expect(localStorage.getItem(PERSONAL_FIT_ENABLED_KEY)).toBeNull();
+
+        await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+        await userEvent.click(screen.getByRole('checkbox', { name: /Enable personal fit scoring|Enable|Enabled/i }));
+        expect(localStorage.getItem(PERSONAL_FIT_ENABLED_KEY)).toBe('true');
+
+        await userEvent.click(screen.getByRole('tab', { name: 'All Pets' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Show Advanced Filters' }));
+
+        const sortSelect = screen.getByRole('combobox', { name: 'Sort by' });
+        await userEvent.click(sortSelect);
+        expect(await screen.findByRole('option', { name: 'Personal fit score' })).toBeEnabled();
+    });
+
+    it('does not sort by personal fit by default', async () => {
+        const pets = [
+            createPet({ ID: 1, Name: 'Old Dog', Age: 120, Stage: 'Available', SpecialNeeds: '' }),
+            createPet({ ID: 2, Name: 'Young Dog', Age: 6, Stage: 'Available', SpecialNeeds: '' }),
+        ];
+
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        setLocationSearch('sort=score');
+        renderApp();
+        await screen.findByText('Old Dog');
+
+        const oldDog = screen.getByText('Old Dog');
+        const youngDog = screen.getByText('Young Dog');
+        expect(oldDog.compareDocumentPosition(youngDog) & Node.DOCUMENT_POSITION_FOLLOWING)
+            .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(screen.queryByText(/^Personal fit:/i)).not.toBeInTheDocument();
+        expect((screen.getByRole('textbox', { name: /search by name or breed/i }) as HTMLInputElement).value).toBe('');
+    });
+
+    it('requires opt-in before score sorting and score badges appear', async () => {
+        const pets = [
+            createPet({ ID: 1, Name: 'Old Dog', Age: 120, Stage: 'Available', SpecialNeeds: '' }),
+            createPet({ ID: 2, Name: 'Young Dog', Age: 6, Stage: 'Available', SpecialNeeds: '' }),
+        ];
+        localStorage.setItem(PERSONAL_FIT_ENABLED_KEY, JSON.stringify(false));
+        localStorage.setItem(PERSONAL_FIT_PREFERENCES_KEY, JSON.stringify({
+            agePreference: 90,
+            stagePriority: 0,
+            specialNeedsPriority: 0,
+        }));
+        const fetchMock = vi.fn().mockResolvedValue(toResponse(buildSearchXml(pets)));
+        vi.stubGlobal('fetch', fetchMock);
+
+        const firstRender = renderApp();
+        await screen.findByText('Old Dog');
+
+        await userEvent.click(screen.getByRole('button', { name: 'Show Advanced Filters' }));
+
+        const sortSelect = screen.getByRole('combobox', { name: 'Sort by' });
+        await userEvent.click(sortSelect);
+        const scoreOption = await screen.findByRole('option', { name: 'Personal fit score (enable first)' });
+        expect(scoreOption).toHaveAttribute('aria-disabled', 'true');
+
+        expect(screen.queryByText(/^Personal fit:/i)).not.toBeInTheDocument();
+        firstRender.unmount();
+
+        localStorage.setItem(PERSONAL_FIT_ENABLED_KEY, JSON.stringify(true));
+        renderApp();
+        await screen.findByText('Old Dog');
+
+        await userEvent.click(screen.getByRole('button', { name: 'Show Advanced Filters' }));
+        const enabledSortSelect = screen.getByRole('combobox', { name: 'Sort by' });
+        await userEvent.click(enabledSortSelect);
+        await userEvent.click(await screen.findByRole('option', { name: 'Personal fit score' }));
+
+        const scores = await screen.findAllByText(/^Personal fit:/i);
+        expect(scores).toHaveLength(2);
+        expect(window.location.search).toContain('sort=score');
+        expect(localStorage.getItem(PERSONAL_FIT_ENABLED_KEY)).toBe('true');
     });
 
     it('stores last successful pet fetch time by tab and displays freshness message', async () => {

@@ -20,6 +20,7 @@ interface PetListProps {
     isInCompare: (pet: AdoptableSearch) => boolean;
     isCompareLimitReached: boolean;
     onToggleCompare: (pet: AdoptableSearch) => void;
+    getPetFitScore?: (pet: AdoptableSearch) => number | null;
 }
 
 const PetList: React.FC<PetListProps> = ({
@@ -37,6 +38,7 @@ const PetList: React.FC<PetListProps> = ({
     isInCompare,
     isCompareLimitReached,
     onToggleCompare,
+    getPetFitScore,
 }) => {
     if (loading) {
         return (
@@ -105,6 +107,7 @@ const PetList: React.FC<PetListProps> = ({
                             isInCompare={isInCompare(pet)}
                             isCompareLimitReached={isCompareLimitReached}
                             onToggleCompare={() => onToggleCompare(pet)}
+                            matchScore={getPetFitScore ? getPetFitScore(pet) : null}
                         />
                     </Grid>
                 ))}
