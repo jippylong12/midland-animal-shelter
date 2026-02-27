@@ -82,6 +82,7 @@ import {
     COMPACT_CARD_VIEW_STORAGE_KEY,
     parseLocalAppStateImport,
 } from './utils/localAppState';
+import { trackPortfolioUiInteraction } from './utils/analytics';
 
 const parser = new XMLParser();
 type AppTabKind = 'fetch' | 'favorites' | 'settings';
@@ -445,6 +446,15 @@ function App() {
     const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
         const previousTabKind = getTabKind(selectedTab);
         const nextTabKind = getTabKind(newValue);
+        const previousTabLabel = tabLabels[selectedTab]?.label ?? 'unknown';
+        const nextTabLabel = tabLabels[newValue]?.label ?? 'unknown';
+
+        trackPortfolioUiInteraction('tab_change', 'header_tabs', {
+            previous_tab_index: selectedTab,
+            previous_tab_label: previousTabLabel,
+            next_tab_index: newValue,
+            next_tab_label: nextTabLabel,
+        });
 
         setSelectedTab(newValue);
         setIsOfflineListMode(false);
@@ -488,6 +498,18 @@ function App() {
     };
 
     const handleClearFilters = () => {
+        trackPortfolioUiInteraction('clear_filters', 'filters', {
+            selected_tab_index: selectedTab,
+            selected_tab_label: tabLabels[selectedTab]?.label ?? 'unknown',
+            query_length: searchQuery.trim().length,
+            selected_breed_count: breed.length,
+            has_gender_filter: Boolean(gender),
+            has_stage_filter: Boolean(stage),
+            has_age_filter: Boolean(age.min) || Boolean(age.max),
+            has_sort_filter: Boolean(sortBy),
+            hide_seen_enabled: hideSeen,
+        });
+
         setSearchQuery('');
         setBreed([]);
         setGender('');
@@ -504,11 +526,20 @@ function App() {
     };
 
     const handleResetPersonalFitPreferences = () => {
+        trackPortfolioUiInteraction('reset_personal_fit_preferences', 'settings', {
+            selected_tab_index: selectedTab,
+        });
         handlePersonalFitPreferencesChange(DEFAULT_PERSONAL_FIT_PREFERENCES);
     };
 
     const handlePersonalFitEnabledChange = () => {
         const nextEnabled = !isPersonalFitEnabled;
+
+        trackPortfolioUiInteraction('toggle_personal_fit_enabled', 'settings', {
+            enabled: nextEnabled,
+            selected_tab_index: selectedTab,
+        });
+
         setIsPersonalFitEnabled(nextEnabled);
         writePersonalFitEnabled(nextEnabled);
         if (!nextEnabled) {
@@ -517,6 +548,9 @@ function App() {
     };
 
     const handleCompactCardViewChange = (_: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+        trackPortfolioUiInteraction('toggle_compact_card_view', 'settings', {
+            enabled: checked,
+        });
         setIsCompactCardView(checked);
     };
 
@@ -535,6 +569,12 @@ function App() {
     const handleSaveSearchPreset = (presetName: string) => {
         const preset = createSearchPreset(presetName, selectedTab, getCurrentPresetFilters());
         if (!preset.name) return;
+
+        trackPortfolioUiInteraction('save_search_preset', 'filters', {
+            preset_id: preset.id,
+            preset_name: preset.name,
+            selected_tab_index: selectedTab,
+        });
 
         setSearchPresets((prev) => {
             const normalizedName = preset.name.toLowerCase();
@@ -560,6 +600,12 @@ function App() {
         const preset = searchPresets.find((item) => item.id === presetId);
         if (!preset) return;
 
+        trackPortfolioUiInteraction('apply_search_preset', 'filters', {
+            preset_id: preset.id,
+            preset_name: preset.name,
+            selected_tab_index: preset.selectedTab,
+        });
+
         setSelectedTab(preset.selectedTab);
         setSearchQuery(preset.filters.searchQuery);
         setBreed(preset.filters.breed);
@@ -572,6 +618,13 @@ function App() {
     };
 
     const handleDeleteSearchPreset = (presetId: string) => {
+        const presetToDelete = searchPresets.find((item) => item.id === presetId);
+        trackPortfolioUiInteraction('delete_search_preset', 'filters', {
+            preset_id: presetId,
+            preset_name: presetToDelete?.name ?? 'unknown',
+            before_count: searchPresets.length,
+        });
+
         setSearchPresets((prev) => {
             const next = prev.filter((item) => item.id !== presetId);
             writeSearchPresets(next);
@@ -607,6 +660,10 @@ function App() {
 
         const currentStore = readNewMatchStorage();
         const speciesKeys = getSpeciesKeysForCurrentTab();
+        trackPortfolioUiInteraction('clear_current_tab_new_matches', 'new_matches', {
+            selected_tab_index: selectedTab,
+            species_key_count: speciesKeys.length,
+        });
         const nextStore = clearSpeciesNewMatchHistory(currentStore, speciesKeys, pets);
         writeNewMatchStorage(nextStore);
         setHasNewMatchHistory(Object.keys(nextStore).length > 0);
@@ -614,10 +671,13 @@ function App() {
     }, [getSpeciesKeysForCurrentTab, pets, selectedTab]);
 
     const clearAllNewMatches = useCallback(() => {
+        trackPortfolioUiInteraction('clear_all_new_matches', 'new_matches', {
+            selected_tab_index: selectedTab,
+        });
         localStorage.removeItem(NEW_MATCH_STORAGE_KEY);
         setHasNewMatchHistory(false);
         setNewMatchPetIds(new Set());
-    }, []);
+    }, [selectedTab]);
 
     const resetStateTransferStatus = () => {
         setStateTransferStatus(null);
@@ -653,11 +713,18 @@ function App() {
                 severity: 'success',
                 message: `Export complete: ${favorites.length} favorites, ${seenPets.length} seen pets, ${searchPresets.length} presets, and ${Object.keys(adoptionChecklistStore).length} checklist entries exported.`,
             });
+            trackPortfolioUiInteraction('export_local_app_state', 'settings', {
+                favorites_count: favorites.length,
+                seen_count: seenPets.length,
+                preset_count: searchPresets.length,
+                checklist_count: Object.keys(adoptionChecklistStore).length,
+            });
         } catch {
             setStateTransferStatus({
                 severity: 'error',
                 message: 'Unable to export local app state. Please try again.',
             });
+            trackPortfolioUiInteraction('export_local_app_state_failed', 'settings');
         }
     };
 
@@ -685,11 +752,20 @@ function App() {
                 severity: 'success',
                 message: `Import complete: ${parsedState.favorites.length} favorites, ${parsedState.seenPets.length} seen pets, ${parsedState.searchPresets.length} presets, and ${Object.keys(parsedState.adoptionChecklists).length} checklist entries imported.`,
             });
+            trackPortfolioUiInteraction('import_local_app_state', 'settings', {
+                favorites_count: parsedState.favorites.length,
+                seen_count: parsedState.seenPets.length,
+                preset_count: parsedState.searchPresets.length,
+                checklist_count: Object.keys(parsedState.adoptionChecklists).length,
+            });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to import local app state file.';
             setStateTransferStatus({
                 severity: 'error',
                 message,
+            });
+            trackPortfolioUiInteraction('import_local_app_state_failed', 'settings', {
+                error_message: message,
             });
         } finally {
             event.target.value = '';
@@ -698,6 +774,10 @@ function App() {
 
     // Handle Page Change
     const handlePageChange = (_event: React.ChangeEvent<unknown>, page: number) => {
+        trackPortfolioUiInteraction('pagination_change', 'pagination', {
+            page,
+            total_pages: totalPages,
+        });
         setCurrentPage(page);
     };
 
@@ -904,6 +984,10 @@ function App() {
         if (activeElement instanceof HTMLElement) {
             lastModalTriggerRef.current = activeElement;
         }
+
+        trackPortfolioUiInteraction('open_pet_modal', 'pet_list', {
+            animal_id: animalID,
+        });
 
         setSelectedAnimalID(animalID);
         setIsModalOpen(true);

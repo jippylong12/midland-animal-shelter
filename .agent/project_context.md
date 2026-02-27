@@ -74,3 +74,7 @@
 - **Topic:** Settings placement for preference controls
   - **Rule:** Place client-owned preference/model-tuning controls in a dedicated Settings tab and require explicit enablement before they affect ranking/sorting.
   - **Reason:** This preserves list browsing clarity, avoids confusing implicit behavior changes, and makes score provenance discoverable.
+
+- **Topic:** GA4 normalized analytics tracking
+  - **Rule:** Centralize GA4 helpers in `src/utils/analytics.ts`, keep one delegated document listener for `a[href]` clicks, sanitize destinations to origin + pathname (preserving `mailto:`/`tel:`), and emit normalized + legacy events in parallel.
+  - **Reason:** This keeps instrumentation consistent across components, avoids per-link event handlers, and preserves dashboard continuity during analytics migration.

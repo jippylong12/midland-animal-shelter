@@ -6,6 +6,13 @@ import CssBaseline from '@mui/material/CssBaseline';
 import './index.css';
 import App from './App.tsx';
 import theme from './theme'; // Import the theme
+import {
+    initDelegatedLinkTracking,
+    initSpaPageViewTracking,
+} from './utils/analytics';
+
+initDelegatedLinkTracking();
+initSpaPageViewTracking();
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>

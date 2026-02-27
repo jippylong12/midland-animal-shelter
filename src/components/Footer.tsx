@@ -20,6 +20,7 @@ const Footer: React.FC<FooterProps> = ({
     <Box
         id="disclaimer"
         component="footer"
+        data-ga-section="footer"
         sx={{
             mt: 5,
             py: { xs: 3, md: 4 },
@@ -64,6 +65,10 @@ const Footer: React.FC<FooterProps> = ({
                         href="https://www.midlandtexas.gov/1030/Animals-currently-in-the-Shelter"
                         target="_blank"
                         rel="noopener"
+                        data-ga-section="footer"
+                        data-ga-kind="official_listing"
+                        data-ga-item="city_midland_shelter_listing"
+                        data-ga-label="Animals Currently in the Shelter"
                     >
                         Animals Currently in the Shelter
                     </Link>

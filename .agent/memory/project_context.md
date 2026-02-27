@@ -23,6 +23,7 @@
 - Require explicit accessible labels for icon-only controls (`aria-label`) and add consistent focus-visible cues before shipping accessibility-focused UI upgrades.
 - Centralize modal share text generation in a utility (`src/utils/petSummary.ts`) and keep clipboard interaction in `PetModal` as a fallback-first flow (Clipboard API → legacy `execCommand`), returning explicit success/error messages.
 - Keep preference slider directionality explicit in both labeling and implementation (`low` values should map to one named pole and `high` values to the opposite) and persist that contract in targeted tests.
+- Keep analytics instrumentation centralized in `src/utils/analytics.ts` with delegated link-click tracking and dual-fire legacy/normalized GA4 events so components only supply optional `data-ga-*` metadata.
 
 ## Gotchas
 - After adding new `@mui/icons-material` imports during dev, Vite may need a restart to avoid stale optimized dependency warnings/errors.
@@ -34,6 +35,7 @@
 - Preset data in localStorage should be treated as untrusted: normalize filter values (including gender/sort/breed/age values) on read so malformed records cannot break the filters UI.
 - When a localStorage-backed hook performs sequential updates in one event, prefer functional `setState` updates to avoid stale closure merges that can overwrite earlier mutations.
 - App modal open/close flows can emit warnings and extra focus updates in tests unless assertions are scoped to user-visible behavior (`findByRole`, focus checks, and awaited closing transitions).
+- SPA route analytics should hook history mutations once and dedupe by current path/search/hash to avoid duplicate GA4 `page_view` events from repeated `replaceState` calls.
 
 ## Decisions Applied
 - **Topic:** Personal fit age slider direction

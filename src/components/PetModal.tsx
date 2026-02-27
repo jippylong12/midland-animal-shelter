@@ -489,7 +489,15 @@ const PetModal: React.FC<PetModalProps> = ({
                                 {modalData.VideoID && (
                                     <Box sx={{ mt: 1 }}>
                                         <Typography variant="body2" fontWeight="bold">Video:</Typography>
-                                        <Link href={`https://videos.example.com/${modalData.VideoID}`} target="_blank" rel="noopener">
+                                        <Link
+                                            href={`https://videos.example.com/${modalData.VideoID}`}
+                                            target="_blank"
+                                            rel="noopener"
+                                            data-ga-section="pet_modal"
+                                            data-ga-kind="video"
+                                            data-ga-item={`pet-${modalData.ID}`}
+                                            data-ga-label="Watch Video"
+                                        >
                                             Watch Video
                                         </Link>
                                     </Box>
@@ -553,6 +561,10 @@ const PetModal: React.FC<PetModalProps> = ({
                                         href={modalData.AdoptionApplicationUrl}
                                         target="_blank"
                                         rel="noopener"
+                                        data-ga-section="pet_modal"
+                                        data-ga-kind="adoption_application"
+                                        data-ga-item={`pet-${modalData.ID}`}
+                                        data-ga-label={`Adopt ${modalData.AnimalName}`}
                                         fullWidth
                                         sx={{ borderRadius: 8, py: 1.5, fontSize: '1.1rem', fontWeight: 'bold' }}
                                     >
